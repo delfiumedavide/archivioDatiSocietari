@@ -36,9 +36,9 @@
                     @foreach($expired as $doc)
                     <tr class="bg-red-50/50">
                         <td class="px-6 py-3"><a href="{{ route('documents.show', $doc) }}" class="text-sm font-medium text-brand-900 hover:underline">{{ $doc->title }}</a></td>
-                        <td class="px-6 py-3 text-sm text-gray-700">{{ $doc->company->denominazione }}</td>
-                        <td class="px-6 py-3 text-sm text-gray-600">{{ $doc->category->label }}</td>
-                        <td class="px-6 py-3 text-sm text-red-700 font-medium">{{ $doc->expiration_date->format('d/m/Y') }}</td>
+                        <td class="px-6 py-3 text-sm text-gray-700">{{ $doc->company?->denominazione ?? '-' }}</td>
+                        <td class="px-6 py-3 text-sm text-gray-600">{{ $doc->category?->label ?? '-' }}</td>
+                        <td class="px-6 py-3 text-sm text-red-700 font-medium">{{ $doc->expiration_date?->format('d/m/Y') ?? '-' }}</td>
                         <td class="px-6 py-3"><span class="badge-red">{{ abs($doc->days_until_expiration) }} gg fa</span></td>
                         <td class="px-6 py-3 text-right">
                             <a href="{{ route('documents.show', $doc) }}" class="text-brand-600 hover:underline text-sm">Gestisci</a>
@@ -76,9 +76,9 @@
                     @foreach($expiring as $doc)
                     <tr class="bg-yellow-50/50">
                         <td class="px-6 py-3"><a href="{{ route('documents.show', $doc) }}" class="text-sm font-medium text-brand-900 hover:underline">{{ $doc->title }}</a></td>
-                        <td class="px-6 py-3 text-sm text-gray-700">{{ $doc->company->denominazione }}</td>
-                        <td class="px-6 py-3 text-sm text-gray-600">{{ $doc->category->label }}</td>
-                        <td class="px-6 py-3 text-sm text-yellow-700 font-medium">{{ $doc->expiration_date->format('d/m/Y') }}</td>
+                        <td class="px-6 py-3 text-sm text-gray-700">{{ $doc->company?->denominazione ?? '-' }}</td>
+                        <td class="px-6 py-3 text-sm text-gray-600">{{ $doc->category?->label ?? '-' }}</td>
+                        <td class="px-6 py-3 text-sm text-yellow-700 font-medium">{{ $doc->expiration_date?->format('d/m/Y') ?? '-' }}</td>
                         <td class="px-6 py-3"><span class="badge-yellow">{{ $doc->days_until_expiration }} gg</span></td>
                         <td class="px-6 py-3 text-right">
                             <a href="{{ route('documents.show', $doc) }}" class="text-brand-600 hover:underline text-sm">Gestisci</a>

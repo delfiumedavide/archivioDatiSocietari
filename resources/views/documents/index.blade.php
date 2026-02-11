@@ -79,9 +79,9 @@
                             <a href="{{ route('documents.show', $document) }}" class="text-sm font-medium text-brand-900 hover:underline">{{ $document->title }}</a>
                             <p class="text-xs text-gray-500 mt-0.5">v{{ $document->current_version }} &middot; {{ $document->file_name_original }}</p>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-700">{{ $document->company->denominazione }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ $document->company?->denominazione ?? '-' }}</td>
                         <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-800">{{ $document->category->label }}</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-800">{{ $document->category?->label ?? '-' }}</span>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-700">
                             {{ $document->expiration_date?->format('d/m/Y') ?? '-' }}

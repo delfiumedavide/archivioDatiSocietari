@@ -110,10 +110,10 @@
                                     {{ $document->title }}
                                 </a>
                             </td>
-                            <td class="px-6 py-3 text-gray-600">{{ $document->company->denominazione }}</td>
-                            <td class="px-6 py-3 text-gray-600">{{ $document->category->label }}</td>
+                            <td class="px-6 py-3 text-gray-600">{{ $document->company?->denominazione ?? '-' }}</td>
+                            <td class="px-6 py-3 text-gray-600">{{ $document->category?->label ?? '-' }}</td>
                             <td class="px-6 py-3 text-gray-600">
-                                {{ $document->expiration_date->format('d/m/Y') }}
+                                {{ $document->expiration_date?->format('d/m/Y') ?? '-' }}
                                 <span class="block text-xs {{ $document->days_until_expiration < 0 ? 'text-red-500' : 'text-yellow-600' }}">
                                     @if($document->days_until_expiration < 0)
                                         Scaduto da {{ abs($document->days_until_expiration) }} giorni

@@ -15,7 +15,7 @@
             <h1 class="text-2xl font-bold text-gray-900">{{ $document->title }}</h1>
             <div class="flex flex-wrap items-center gap-2 mt-2">
                 <span class="badge-{{ $document->status_color }}">{{ $document->status_label }}</span>
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-800">{{ $document->category->label }}</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-800">{{ $document->category?->label ?? '-' }}</span>
                 <span class="text-sm text-gray-500">v{{ $document->current_version }}</span>
             </div>
         </div>
@@ -42,11 +42,17 @@
                     <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                         <div>
                             <dt class="text-sm text-gray-500">Societa</dt>
-                            <dd class="text-sm font-medium text-gray-900"><a href="{{ route('companies.show', $document->company) }}" class="text-brand-600 hover:underline">{{ $document->company->denominazione }}</a></dd>
+                            <dd class="text-sm font-medium text-gray-900">
+                                @if($document->company)
+                                    <a href="{{ route('companies.show', $document->company) }}" class="text-brand-600 hover:underline">{{ $document->company->denominazione }}</a>
+                                @else
+                                    <span class="text-gray-400">-</span>
+                                @endif
+                            </dd>
                         </div>
                         <div>
                             <dt class="text-sm text-gray-500">Categoria</dt>
-                            <dd class="text-sm font-medium text-gray-900">{{ $document->category->label }}</dd>
+                            <dd class="text-sm font-medium text-gray-900">{{ $document->category?->label ?? '-' }}</dd>
                         </div>
                         <div>
                             <dt class="text-sm text-gray-500">File Originale</dt>
