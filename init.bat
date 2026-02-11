@@ -5,33 +5,38 @@ echo   Gruppo di Martino
 echo =============================================
 echo.
 
-echo [1/7] Build Docker containers...
+echo [1/8] Checking .env file...
+if not exist .env (
+    copy .env.example .env
+    echo    .env creato da .env.example
+) else (
+    echo    .env esistente, salto la copia
+)
+
+echo [2/8] Build Docker containers...
 docker-compose build
 if %ERRORLEVEL% neq 0 goto :error
 
-echo [2/7] Starting containers...
+echo [3/8] Starting containers...
 docker-compose up -d
 if %ERRORLEVEL% neq 0 goto :error
 
-echo [3/7] Waiting for MySQL to be ready...
-timeout /t 15 /nobreak >nul
+echo [4/8] Waiting for MySQL to be ready...
+timeout /t 20 /nobreak >nul
 
-echo [4/7] Installing Composer dependencies...
-docker-compose exec app composer install --no-interaction --prefer-dist
+echo [5/8] Fixing permissions...
+docker exec archivio_app bash -c "mkdir -p /var/www/html/storage/framework/{cache/data,sessions,views} /var/www/html/storage/logs /var/www/html/storage/app/documents /var/www/html/bootstrap/cache && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache"
+
+echo [6/8] Installing Composer dependencies and setting up Laravel...
+docker exec archivio_app bash -c "cd /var/www/html && composer install --no-interaction --prefer-dist && php artisan key:generate && php artisan migrate --force && php artisan db:seed --force"
 if %ERRORLEVEL% neq 0 goto :error
 
-echo [5/7] Generating app key and running migrations...
-docker-compose exec app php artisan key:generate
-docker-compose exec app php artisan migrate --force
-docker-compose exec app php artisan db:seed --force
+echo [7/8] Installing NPM dependencies...
+docker exec archivio_app bash -c "cd /var/www/html && npm install"
 if %ERRORLEVEL% neq 0 goto :error
 
-echo [6/7] Installing NPM dependencies...
-docker-compose exec app npm install
-if %ERRORLEVEL% neq 0 goto :error
-
-echo [7/7] Building frontend assets...
-docker-compose exec app npm run build
+echo [8/8] Building frontend assets...
+docker exec archivio_app bash -c "cd /var/www/html && npm run build"
 if %ERRORLEVEL% neq 0 goto :error
 
 echo.
