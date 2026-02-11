@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
+  <!-- Archive/Building Icon -->
+  <g transform="translate(4, 8)">
+    <!-- Building base -->
+    <rect x="6" y="24" width="52" height="40" rx="3" fill="#1e3a5f" />
+    <!-- Building roof/pediment -->
+    <path d="M2 26 L32 6 L62 26 Z" fill="#1e3a5f" />
+    <!-- Gold roof accent -->
+    <path d="M8 26 L32 10 L56 26 Z" fill="#c9952b" opacity="0.3" />
+    <!-- Columns -->
+    <rect x="14" y="28" width="5" height="32" rx="1" fill="#fff" opacity="0.9" />
+    <rect x="25" y="28" width="5" height="32" rx="1" fill="#fff" opacity="0.9" />
+    <rect x="36" y="28" width="5" height="32" rx="1" fill="#fff" opacity="0.9" />
+    <rect x="47" y="28" width="5" height="32" rx="1" fill="#fff" opacity="0.9" />
+    <!-- Door -->
+    <rect x="26" y="44" width="12" height="20" rx="6" fill="#c9952b" opacity="0.6" />
+    <!-- Gold star accent -->
+    <circle cx="32" cy="14" r="3" fill="#c9952b" />
+    <!-- Document pages (stacked behind building) -->
+    <rect x="44" y="10" width="22" height="28" rx="2" fill="#c9952b" opacity="0.2" stroke="#c9952b" stroke-width="1" />
+    <line x1="48" y1="16" x2="62" y2="16" stroke="#c9952b" stroke-width="1" opacity="0.5" />
+    <line x1="48" y1="20" x2="60" y2="20" stroke="#c9952b" stroke-width="1" opacity="0.5" />
+    <line x1="48" y1="24" x2="58" y2="24" stroke="#c9952b" stroke-width="1" opacity="0.5" />
+    <line x1="48" y1="28" x2="62" y2="28" stroke="#c9952b" stroke-width="1" opacity="0.5" />
+    <!-- Base line -->
+    <rect x="2" y="62" width="60" height="3" rx="1" fill="#c9952b" />
+  </g>
+  <!-- Text -->
+  <g transform="translate(78, 0)">
+    <text x="0" y="30" font-family="Inter, system-ui, sans-serif" font-size="17" font-weight="700" fill="#1e3a5f" letter-spacing="0.5">
+      Archivio Dati Societari
+    </text>
+    <text x="0" y="52" font-family="Inter, system-ui, sans-serif" font-size="20" font-weight="600" fill="#c9952b" letter-spacing="1">
+      Gruppo di Martino
+    </text>
+    <!-- Decorative line -->
+    <rect x="0" y="58" width="220" height="2" rx="1" fill="#1e3a5f" opacity="0.15" />
+    <rect x="0" y="58" width="80" height="2" rx="1" fill="#c9952b" />
+  </g>
+</svg>
