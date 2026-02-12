@@ -1,17 +1,12 @@
-[phases.setup]
-nixPkgs = ["nodejs_18"]
-
+@"
 [phases.build]
 cmds = [
-    "composer install --no-dev --optimize-autoloader --no-interaction",
-    "npm install",
-    "npm run build",
-    "mkdir -p storage/framework/{cache/data,sessions,views} storage/logs storage/app/documents bootstrap/cache",
-    "chmod -R 775 storage bootstrap/cache",
-    "php artisan config:cache || true",
-    "php artisan route:cache || true",
-    "php artisan view:cache || true"
+  "composer install --no-dev --optimize-autoloader",
+  "php artisan config:clear",
+  "php artisan route:clear",
+  "php artisan view:clear"
 ]
 
 [start]
-cmd = "mkdir -p storage/framework/{cache/data,sessions,views} storage/logs storage/app/documents bootstrap/cache && chmod -R 775 storage bootstrap/cache && php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"
+cmd = "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
+"@ | Set-Content nixpacks.toml
