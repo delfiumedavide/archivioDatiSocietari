@@ -205,7 +205,7 @@
                     {{-- Details --}}
                     <div class="flex-1 min-w-0">
                         <p class="text-sm text-gray-900">
-                            <span class="font-medium">{{ $activity->user->name }}</span>
+                            <span class="font-medium">{{ $activity->user?->name ?? 'Sistema' }}</span>
                             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-{{ $activity->action_color }}-100 text-{{ $activity->action_color }}-700 mx-1">
                                 {{ $activity->action_label }}
                             </span>
@@ -257,7 +257,7 @@ document.addEventListener('DOMContentLoaded', function () {
         data: {
             labels: categoryData.labels,
             datasets: [{
-                data: categoryData.values,
+                data: categoryData.data,
                 backgroundColor: brandPalette.slice(0, categoryData.labels.length),
                 borderWidth: 2,
                 borderColor: '#ffffff',
@@ -285,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function () {
             labels: companyData.labels,
             datasets: [{
                 label: 'Documenti',
-                data: companyData.values,
+                data: companyData.data,
                 backgroundColor: brandPrimary + 'cc',
                 borderColor: brandPrimary,
                 borderWidth: 1,
@@ -324,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function () {
         data: {
             labels: expirationData.labels,
             datasets: [{
-                data: expirationData.values,
+                data: expirationData.data,
                 backgroundColor: ['#059669', '#d97706', '#dc2626'],
                 borderWidth: 2,
                 borderColor: '#ffffff',
@@ -351,7 +351,7 @@ document.addEventListener('DOMContentLoaded', function () {
             labels: uploadData.labels,
             datasets: [{
                 label: 'Documenti caricati',
-                data: uploadData.values,
+                data: uploadData.data,
                 borderColor: brandGold,
                 backgroundColor: brandGold + '20',
                 fill: true,
