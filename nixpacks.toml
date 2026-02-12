@@ -1,5 +1,6 @@
 [phases.build]
 cmds = [
+  "mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs",
   "composer install --no-dev --optimize-autoloader --no-interaction",
   "npm ci",
   "npm run build",
