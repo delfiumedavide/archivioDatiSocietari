@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Throwable;
 
 class LoginController extends Controller
 {
@@ -27,13 +28,17 @@ class LoginController extends Controller
         if (!Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey($request));
 
-            ActivityLog::create([
-                'action' => 'login_failed',
-                'description' => 'Tentativo di accesso fallito per: ' . $request->input('email'),
-                'ip_address' => $request->ip(),
-                'user_agent' => substr((string) $request->userAgent(), 0, 500),
-                'created_at' => now(),
-            ]);
+            try {
+                ActivityLog::create([
+                    'action' => 'login_failed',
+                    'description' => 'Tentativo di accesso fallito per: ' . $request->input('email'),
+                    'ip_address' => $request->ip(),
+                    'user_agent' => substr((string) $request->userAgent(), 0, 500),
+                    'created_at' => now(),
+                ]);
+            } catch (Throwable) {
+                // Non bloccare la UX di login se il logging ha un problema runtime.
+            }
 
             throw ValidationException::withMessages([
                 'email' => __('Credenziali non valide.'),
@@ -50,14 +55,18 @@ class LoginController extends Controller
             'last_login_ip' => $request->ip(),
         ]);
 
-        ActivityLog::create([
-            'user_id' => $user->id,
-            'action' => 'login',
-            'description' => 'Accesso effettuato',
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
-        ]);
+        try {
+            ActivityLog::create([
+                'user_id' => $user->id,
+                'action' => 'login',
+                'description' => 'Accesso effettuato',
+                'ip_address' => $request->ip(),
+                'user_agent' => substr((string) $request->userAgent(), 0, 500),
+                'created_at' => now(),
+            ]);
+        } catch (Throwable) {
+            // Non bloccare il login se il logging ha un problema runtime.
+        }
 
         return redirect()->intended(route('dashboard'));
     }
