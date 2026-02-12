@@ -1,1 +1,1 @@
-web: mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs storage/app/documents bootstrap/cache && chmod -R 775 storage bootstrap/cache && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
+web: php -S 0.0.0.0:${PORT:-8080} -t public
