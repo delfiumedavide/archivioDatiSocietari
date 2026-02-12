@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'default' => env('CACHE_STORE', 'redis'),
+    'default' => env('CACHE_STORE', 'file'),
     'stores' => [
         'redis' => [
             'driver' => 'redis',
