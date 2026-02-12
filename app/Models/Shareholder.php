@@ -11,7 +11,7 @@ class Shareholder extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'company_id', 'tipo', 'nome', 'codice_fiscale',
+        'company_id', 'member_id', 'tipo', 'nome', 'codice_fiscale',
         'quota_percentuale', 'quota_valore', 'data_ingresso',
         'data_uscita', 'diritti_voto', 'note',
     ];
@@ -30,6 +30,11 @@ class Shareholder extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function member(): BelongsTo
+    {
+        return $this->belongsTo(Member::class);
     }
 
     public function scopeActive($query)

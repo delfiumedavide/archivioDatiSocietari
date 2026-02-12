@@ -41,6 +41,10 @@
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                     <span>Societa</span>
                 </a>
+                <a href="{{ route('members.index') }}" class="{{ request()->routeIs('members.*') ? 'sidebar-link-active' : 'sidebar-link' }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2a5 5 0 00-10 0v2m10 0H7m8-10a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>Membri</span>
+                </a>
                 @endif
 
                 @if(auth()->user()->hasSection('documents'))

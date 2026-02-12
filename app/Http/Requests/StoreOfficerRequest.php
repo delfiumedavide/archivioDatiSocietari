@@ -14,8 +14,9 @@ class StoreOfficerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nome' => ['required', 'string', 'max:100'],
-            'cognome' => ['required', 'string', 'max:100'],
+            'member_id' => ['nullable', 'exists:members,id'],
+            'nome' => ['required_without:member_id', 'nullable', 'string', 'max:100'],
+            'cognome' => ['required_without:member_id', 'nullable', 'string', 'max:100'],
             'codice_fiscale' => ['nullable', 'string', 'max:16'],
             'ruolo' => ['required', 'string', 'max:100'],
             'data_nomina' => ['required', 'date'],
@@ -30,10 +31,10 @@ class StoreOfficerRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'nome.required' => 'Il nome è obbligatorio.',
-            'cognome.required' => 'Il cognome è obbligatorio.',
-            'ruolo.required' => 'Il ruolo è obbligatorio.',
-            'data_nomina.required' => 'La data di nomina è obbligatoria.',
+            'nome.required_without' => 'Il nome e obbligatorio se non selezioni un membro.',
+            'cognome.required_without' => 'Il cognome e obbligatorio se non selezioni un membro.',
+            'ruolo.required' => 'Il ruolo e obbligatorio.',
+            'data_nomina.required' => 'La data di nomina e obbligatoria.',
             'data_scadenza.after' => 'La data di scadenza deve essere successiva alla data di nomina.',
         ];
     }

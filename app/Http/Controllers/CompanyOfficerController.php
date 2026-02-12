@@ -6,6 +6,7 @@ use App\Http\Requests\StoreOfficerRequest;
 use App\Models\ActivityLog;
 use App\Models\Company;
 use App\Models\CompanyOfficer;
+use App\Models\Member;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -13,7 +14,8 @@ class CompanyOfficerController extends Controller
 {
     public function store(StoreOfficerRequest $request, Company $company): RedirectResponse
     {
-        $officer = $company->officers()->create($request->validated());
+        $data = $this->normalizeOfficerData($request->validated());
+        $officer = $company->officers()->create($data);
 
         ActivityLog::create([
             'user_id' => $request->user()->id,
@@ -32,7 +34,8 @@ class CompanyOfficerController extends Controller
 
     public function update(StoreOfficerRequest $request, CompanyOfficer $officer): RedirectResponse
     {
-        $officer->update($request->validated());
+        $data = $this->normalizeOfficerData($request->validated());
+        $officer->update($data);
 
         ActivityLog::create([
             'user_id' => $request->user()->id,
@@ -67,5 +70,20 @@ class CompanyOfficerController extends Controller
 
         return redirect()->route('companies.show', ['company' => $companyId, '#cariche'])
             ->with('success', 'Carica societaria rimossa.');
+    }
+
+    private function normalizeOfficerData(array $data): array
+    {
+        if (empty($data['member_id'])) {
+            return $data;
+        }
+
+        $member = Member::findOrFail($data['member_id']);
+
+        $data['nome'] = $member->nome;
+        $data['cognome'] = $member->cognome;
+        $data['codice_fiscale'] = $member->codice_fiscale;
+
+        return $data;
     }
 }

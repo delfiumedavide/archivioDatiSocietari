@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Models\Company;
+use App\Models\Member;
 use App\Models\Shareholder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,8 +14,9 @@ class ShareholderController extends Controller
     public function store(Request $request, Company $company): RedirectResponse
     {
         $validated = $request->validate([
+            'member_id' => ['nullable', 'exists:members,id'],
             'tipo' => ['required', 'in:persona_fisica,persona_giuridica'],
-            'nome' => ['required', 'string', 'max:255'],
+            'nome' => ['required_without:member_id', 'nullable', 'string', 'max:255'],
             'codice_fiscale' => ['nullable', 'string', 'max:16'],
             'quota_percentuale' => ['required', 'numeric', 'min:0.01', 'max:100'],
             'quota_valore' => ['nullable', 'numeric', 'min:0'],
@@ -24,6 +26,7 @@ class ShareholderController extends Controller
             'note' => ['nullable', 'string', 'max:5000'],
         ]);
 
+        $validated = $this->normalizeShareholderData($validated);
         $shareholder = $company->shareholders()->create($validated);
 
         ActivityLog::create([
@@ -44,8 +47,9 @@ class ShareholderController extends Controller
     public function update(Request $request, Shareholder $shareholder): RedirectResponse
     {
         $validated = $request->validate([
+            'member_id' => ['nullable', 'exists:members,id'],
             'tipo' => ['required', 'in:persona_fisica,persona_giuridica'],
-            'nome' => ['required', 'string', 'max:255'],
+            'nome' => ['required_without:member_id', 'nullable', 'string', 'max:255'],
             'codice_fiscale' => ['nullable', 'string', 'max:16'],
             'quota_percentuale' => ['required', 'numeric', 'min:0.01', 'max:100'],
             'quota_valore' => ['nullable', 'numeric', 'min:0'],
@@ -55,6 +59,7 @@ class ShareholderController extends Controller
             'note' => ['nullable', 'string', 'max:5000'],
         ]);
 
+        $validated = $this->normalizeShareholderData($validated);
         $shareholder->update($validated);
 
         return redirect()->route('companies.show', ['company' => $shareholder->company_id, '#soci'])
@@ -68,5 +73,20 @@ class ShareholderController extends Controller
 
         return redirect()->route('companies.show', ['company' => $companyId, '#soci'])
             ->with('success', 'Socio rimosso.');
+    }
+
+    private function normalizeShareholderData(array $data): array
+    {
+        if (empty($data['member_id'])) {
+            return $data;
+        }
+
+        $member = Member::findOrFail($data['member_id']);
+
+        $data['tipo'] = 'persona_fisica';
+        $data['nome'] = $member->full_name;
+        $data['codice_fiscale'] = $member->codice_fiscale;
+
+        return $data;
     }
 }

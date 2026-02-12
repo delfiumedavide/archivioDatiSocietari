@@ -11,7 +11,7 @@ class CompanyOfficer extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'company_id', 'nome', 'cognome', 'codice_fiscale', 'ruolo',
+        'company_id', 'member_id', 'nome', 'cognome', 'codice_fiscale', 'ruolo',
         'data_nomina', 'data_scadenza', 'data_cessazione',
         'compenso', 'poteri', 'note',
     ];
@@ -29,6 +29,11 @@ class CompanyOfficer extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function member(): BelongsTo
+    {
+        return $this->belongsTo(Member::class);
     }
 
     public function scopeActive($query)

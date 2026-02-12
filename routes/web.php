@@ -7,6 +7,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanyOfficerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\MemberController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ShareholderController;
 use App\Http\Controllers\UserController;
@@ -32,6 +33,9 @@ Route::middleware(['auth'])->group(function () {
     // Companies
     Route::middleware('permission:companies')->group(function () {
         Route::resource('companies', CompanyController::class);
+        Route::resource('members', MemberController::class)->except('show');
+        Route::get('members/{member}/documents/{type}/download', [MemberController::class, 'downloadDocument'])
+            ->name('members.documents.download');
 
         // Nested: Officers
         Route::post('companies/{company}/officers', [CompanyOfficerController::class, 'store'])->name('companies.officers.store');

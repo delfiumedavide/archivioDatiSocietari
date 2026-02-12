@@ -6,6 +6,7 @@ use App\Http\Requests\StoreCompanyRequest;
 use App\Http\Requests\UpdateCompanyRequest;
 use App\Models\ActivityLog;
 use App\Models\Company;
+use App\Models\Member;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -54,14 +55,19 @@ class CompanyController extends Controller
     public function show(Company $company): View
     {
         $company->load([
-            'officers' => fn ($q) => $q->active()->orderBy('ruolo'),
-            'shareholders' => fn ($q) => $q->active()->orderByDesc('quota_percentuale'),
+            'officers' => fn ($q) => $q->with('member.documents')->active()->orderBy('ruolo'),
+            'shareholders' => fn ($q) => $q->with('member')->active()->orderByDesc('quota_percentuale'),
             'documents' => fn ($q) => $q->with('category')->latest()->limit(10),
             'childRelationships.childCompany',
             'parentRelationships.parentCompany',
         ]);
 
-        return view('companies.show', compact('company'));
+        $members = Member::with('documents')
+            ->orderBy('cognome')
+            ->orderBy('nome')
+            ->get();
+
+        return view('companies.show', compact('company', 'members'));
     }
 
     public function edit(Company $company): View

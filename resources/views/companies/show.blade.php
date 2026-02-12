@@ -253,14 +253,27 @@
                     @csrf
                     <h4 class="text-sm font-semibold text-gray-700 mb-4">Nuova Carica</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="sm:col-span-2 lg:col-span-3">
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Membro</label>
+                            <select name="member_id" class="form-select w-full text-sm">
+                                <option value="">Seleziona membro (opzionale)</option>
+                                @foreach($members as $member)
+                                    <option value="{{ $member->id }}" {{ old('member_id') == $member->id ? 'selected' : '' }}>
+                                        {{ $member->full_name }} - {{ $member->codice_fiscale }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">Se selezioni un membro, nome/cognome/codice fiscale vengono presi dalla sua anagrafica.</p>
+                            @error('member_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
-                            <input type="text" name="nome" value="{{ old('nome') }}" required class="form-input w-full text-sm">
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Nome</label>
+                            <input type="text" name="nome" value="{{ old('nome') }}" class="form-input w-full text-sm">
                             @error('nome') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Cognome *</label>
-                            <input type="text" name="cognome" value="{{ old('cognome') }}" required class="form-input w-full text-sm">
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Cognome</label>
+                            <input type="text" name="cognome" value="{{ old('cognome') }}" class="form-input w-full text-sm">
                             @error('cognome') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
@@ -340,6 +353,17 @@
                                 @if($officer->codice_fiscale)
                                 <div class="text-xs text-gray-500">CF: {{ $officer->codice_fiscale }}</div>
                                 @endif
+                                @if($officer->member)
+                                <div class="text-xs text-brand-600 mt-1">Membro collegato: {{ $officer->member->full_name }}</div>
+                                <div class="flex items-center gap-1 mt-1">
+                                    @if($officer->member->identity_document)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-{{ $officer->member->identity_document->status_color }}-100 text-{{ $officer->member->identity_document->status_color }}-700">CI {{ $officer->member->identity_document->status_label }}</span>
+                                    @endif
+                                    @if($officer->member->tax_code_document)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-{{ $officer->member->tax_code_document->status_color }}-100 text-{{ $officer->member->tax_code_document->status_color }}-700">CF {{ $officer->member->tax_code_document->status_label }}</span>
+                                    @endif
+                                </div>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $officer->ruolo }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $officer->data_nomina ? $officer->data_nomina->format('d/m/Y') : '-' }}</td>
@@ -403,9 +427,22 @@
                     @csrf
                     <h4 class="text-sm font-semibold text-gray-700 mb-4">Nuovo Socio</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="sm:col-span-2 lg:col-span-3">
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Membro</label>
+                            <select name="member_id" class="form-select w-full text-sm">
+                                <option value="">Seleziona membro (opzionale)</option>
+                                @foreach($members as $member)
+                                    <option value="{{ $member->id }}" {{ old('member_id') == $member->id ? 'selected' : '' }}>
+                                        {{ $member->full_name }} - {{ $member->codice_fiscale }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">Se selezioni un membro, il socio viene impostato automaticamente come persona fisica.</p>
+                            @error('member_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Nome / Ragione Sociale *</label>
-                            <input type="text" name="nome" value="{{ old('nome') }}" required class="form-input w-full text-sm">
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Nome / Ragione Sociale</label>
+                            <input type="text" name="nome" value="{{ old('nome') }}" class="form-input w-full text-sm">
                             @error('nome') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
@@ -480,6 +517,9 @@
                                 <div class="text-sm font-medium text-gray-900">{{ $shareholder->nome }}</div>
                                 @if($shareholder->codice_fiscale)
                                 <div class="text-xs text-gray-500">CF: {{ $shareholder->codice_fiscale }}</div>
+                                @endif
+                                @if($shareholder->member)
+                                <div class="text-xs text-brand-600 mt-1">Membro collegato: {{ $shareholder->member->full_name }}</div>
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
