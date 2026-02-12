@@ -1,12 +1,17 @@
 [phases.setup]
-nixPkgs = ["php82", "php82Extensions.pdo_mysql", "php82Extensions.mbstring", "php82Extensions.xml", "php82Extensions.bcmath", "php82Extensions.gd", "php82Extensions.zip", "php82Extensions.intl", "php82Extensions.opcache", "php82Extensions.redis"]
+nixPkgs = ["nodejs_18"]
 
 [phases.build]
 cmds = [
-    "composer install --no-dev --optimize-autoloader",
+    "composer install --no-dev --optimize-autoloader --no-interaction",
     "npm install",
-    "npm run build"
+    "npm run build",
+    "mkdir -p storage/framework/{cache/data,sessions,views} storage/logs storage/app/documents bootstrap/cache",
+    "chmod -R 775 storage bootstrap/cache",
+    "php artisan config:cache || true",
+    "php artisan route:cache || true",
+    "php artisan view:cache || true"
 ]
 
 [start]
-cmd = "php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"
+cmd = "mkdir -p storage/framework/{cache/data,sessions,views} storage/logs storage/app/documents bootstrap/cache && chmod -R 775 storage bootstrap/cache && php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"
