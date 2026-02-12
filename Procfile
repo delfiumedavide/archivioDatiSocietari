@@ -1,1 +1,1 @@
-web: mkdir -p storage/framework/{cache/data,sessions,views} storage/logs storage/app/documents bootstrap/cache && chmod -R 775 storage bootstrap/cache && php artisan migrate --force && php artisan db:seed --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
+web: mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs storage/app/documents bootstrap/cache && chmod -R 775 storage bootstrap/cache && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
