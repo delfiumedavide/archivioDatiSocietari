@@ -236,7 +236,7 @@
                         @if(auth()->user()->hasPermission('stati_famiglia.manage'))
                         <td class="px-6 py-4 whitespace-nowrap text-right">
                             <div class="flex items-center justify-end gap-2">
-                                <form method="POST" action="{{ route('family-status.destroy-family-member', $fm) }}" onsubmit="return confirm('Rimuovere questo componente dal nucleo familiare?')">
+                                <form method="POST" action="{{ route('family-members.destroy', $fm) }}" onsubmit="return confirm('Rimuovere questo componente dal nucleo familiare?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-red-500 hover:text-red-700 text-sm" title="Rimuovi dal nucleo">
