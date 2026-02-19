@@ -253,20 +253,24 @@
                     @csrf
                     <h4 class="text-sm font-semibold text-gray-700 mb-4">Nuova Carica</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Nome *</label>
-                            <input type="text" name="nome" value="{{ old('nome') }}" required class="form-input w-full text-sm">
-                            @error('nome') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Cognome *</label>
-                            <input type="text" name="cognome" value="{{ old('cognome') }}" required class="form-input w-full text-sm">
-                            @error('cognome') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Codice Fiscale</label>
-                            <input type="text" name="codice_fiscale" value="{{ old('codice_fiscale') }}" class="form-input w-full text-sm" maxlength="16">
-                            @error('codice_fiscale') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                        <div class="sm:col-span-2" x-data="memberSearch()" @click.outside="showResults = false">
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Membro *</label>
+                            <input type="hidden" name="member_id" :value="selectedId" required>
+                            <div class="relative">
+                                <input type="text" x-model="query" @input.debounce.300ms="search()" @focus="if(query.length >= 2) showResults = true" class="form-input w-full text-sm" placeholder="Cerca membro per nome o codice fiscale..." :class="selectedId ? 'border-green-400 bg-green-50' : ''" autocomplete="off">
+                                <div x-show="showResults && results.length > 0" x-transition class="absolute z-20 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-48 overflow-y-auto">
+                                    <template x-for="member in results" :key="member.id">
+                                        <button type="button" @click="select(member)" class="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm border-b border-gray-100 last:border-0">
+                                            <span class="font-medium text-gray-900" x-text="member.full_name"></span>
+                                            <span class="text-xs text-gray-500 ml-2" x-text="member.codice_fiscale"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                                <div x-show="showResults && results.length === 0 && query.length >= 2 && !loading" x-transition class="absolute z-20 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 px-4 py-3 text-sm text-gray-500">
+                                    Nessun membro trovato. <a href="{{ route('members.create') }}" class="text-brand-600 hover:underline">Registra nuovo membro</a>
+                                </div>
+                            </div>
+                            @error('member_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-600 mb-1">Ruolo *</label>
@@ -336,9 +340,11 @@
                         @foreach($company->officers as $officer)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
+                                @if($officer->member)
+                                <a href="{{ route('members.show', $officer->member) }}" class="text-sm font-medium text-brand-600 hover:text-brand-700">{{ $officer->full_name }}</a>
+                                <div class="text-xs text-gray-500">CF: {{ $officer->member->codice_fiscale }}</div>
+                                @else
                                 <div class="text-sm font-medium text-gray-900">{{ $officer->full_name }}</div>
-                                @if($officer->codice_fiscale)
-                                <div class="text-xs text-gray-500">CF: {{ $officer->codice_fiscale }}</div>
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $officer->ruolo }}</td>

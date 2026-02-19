@@ -7,6 +7,8 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanyOfficerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\FamilyStatusController;
+use App\Http\Controllers\MemberController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ShareholderController;
 use App\Http\Controllers\UserController;
@@ -42,6 +44,22 @@ Route::middleware(['auth'])->group(function () {
         Route::post('companies/{company}/shareholders', [ShareholderController::class, 'store'])->name('companies.shareholders.store');
         Route::put('shareholders/{shareholder}', [ShareholderController::class, 'update'])->name('shareholders.update');
         Route::delete('shareholders/{shareholder}', [ShareholderController::class, 'destroy'])->name('shareholders.destroy');
+    });
+
+    // Members
+    Route::middleware('permission:membri')->group(function () {
+        Route::get('members/search', [MemberController::class, 'search'])->name('members.search');
+        Route::resource('members', MemberController::class);
+    });
+
+    // Family Status
+    Route::middleware('permission:stati_famiglia')->group(function () {
+        Route::get('family-status', [FamilyStatusController::class, 'index'])->name('family-status.index');
+        Route::get('family-status/{member}', [FamilyStatusController::class, 'show'])->name('family-status.show');
+        Route::post('family-status/{member}/status-change', [FamilyStatusController::class, 'storeStatusChange'])->name('family-status.store-change');
+        Route::post('family-status/{member}/family-member', [FamilyStatusController::class, 'storeFamilyMember'])->name('family-status.store-family-member');
+        Route::put('family-members/{familyMember}', [FamilyStatusController::class, 'updateFamilyMember'])->name('family-members.update');
+        Route::delete('family-members/{familyMember}', [FamilyStatusController::class, 'destroyFamilyMember'])->name('family-members.destroy');
     });
 
     // Documents

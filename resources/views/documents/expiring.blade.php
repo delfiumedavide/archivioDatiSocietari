@@ -25,7 +25,7 @@
                 <thead class="bg-red-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Documento</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Societa</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Associato a</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Categoria</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Scaduto il</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Giorni</th>
@@ -36,7 +36,7 @@
                     @foreach($expired as $doc)
                     <tr class="bg-red-50/50">
                         <td class="px-6 py-3"><a href="{{ route('documents.show', $doc) }}" class="text-sm font-medium text-brand-900 hover:underline">{{ $doc->title }}</a></td>
-                        <td class="px-6 py-3 text-sm text-gray-700">{{ $doc->company?->denominazione ?? '-' }}</td>
+                        <td class="px-6 py-3 text-sm text-gray-700">{{ $doc->owner_name }}</td>
                         <td class="px-6 py-3 text-sm text-gray-600">{{ $doc->category?->label ?? '-' }}</td>
                         <td class="px-6 py-3 text-sm text-red-700 font-medium">{{ $doc->expiration_date?->format('d/m/Y') ?? '-' }}</td>
                         <td class="px-6 py-3"><span class="badge-red">{{ abs($doc->days_until_expiration) }} gg fa</span></td>
@@ -65,7 +65,7 @@
                 <thead class="bg-yellow-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Documento</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Societa</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Associato a</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Categoria</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Scade il</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Giorni</th>
@@ -76,7 +76,7 @@
                     @foreach($expiring as $doc)
                     <tr class="bg-yellow-50/50">
                         <td class="px-6 py-3"><a href="{{ route('documents.show', $doc) }}" class="text-sm font-medium text-brand-900 hover:underline">{{ $doc->title }}</a></td>
-                        <td class="px-6 py-3 text-sm text-gray-700">{{ $doc->company?->denominazione ?? '-' }}</td>
+                        <td class="px-6 py-3 text-sm text-gray-700">{{ $doc->owner_name }}</td>
                         <td class="px-6 py-3 text-sm text-gray-600">{{ $doc->category?->label ?? '-' }}</td>
                         <td class="px-6 py-3 text-sm text-yellow-700 font-medium">{{ $doc->expiration_date?->format('d/m/Y') ?? '-' }}</td>
                         <td class="px-6 py-3"><span class="badge-yellow">{{ $doc->days_until_expiration }} gg</span></td>

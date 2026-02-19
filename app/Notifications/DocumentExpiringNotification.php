@@ -26,7 +26,7 @@ class DocumentExpiringNotification extends Notification implements ShouldQueue
         return (new MailMessage)
             ->subject('Documento in scadenza: ' . $this->document->title)
             ->greeting('Attenzione!')
-            ->line("Il documento **{$this->document->title}** della società **{$this->document->company->denominazione}** è in scadenza.")
+            ->line("Il documento **{$this->document->title}** di **{$this->document->owner_name}** è in scadenza.")
             ->line("Data scadenza: **{$this->document->expiration_date->format('d/m/Y')}**")
             ->line("Giorni rimanenti: **{$this->document->days_until_expiration}**")
             ->action('Visualizza Documento', route('documents.show', $this->document))
@@ -38,7 +38,7 @@ class DocumentExpiringNotification extends Notification implements ShouldQueue
         return [
             'document_id' => $this->document->id,
             'title' => $this->document->title,
-            'company' => $this->document->company->denominazione,
+            'company' => $this->document->owner_name,
             'expiration_date' => $this->document->expiration_date->format('d/m/Y'),
             'days_remaining' => $this->document->days_until_expiration,
             'type' => 'expiring',

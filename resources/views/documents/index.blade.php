@@ -21,7 +21,7 @@
     {{-- Filters --}}
     <div class="card">
         <div class="card-body">
-            <form method="GET" action="{{ route('documents.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <form method="GET" action="{{ route('documents.index') }}" class="grid grid-cols-1 md:grid-cols-6 gap-4">
                 <div>
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Cerca per titolo..." class="form-input">
                 </div>
@@ -30,6 +30,14 @@
                         <option value="">Tutte le societa</option>
                         @foreach($companies as $company)
                         <option value="{{ $company->id }}" {{ request('company_id') == $company->id ? 'selected' : '' }}>{{ $company->denominazione }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <select name="member_id" class="form-select">
+                        <option value="">Tutti i membri</option>
+                        @foreach($members as $member)
+                        <option value="{{ $member->id }}" {{ request('member_id') == $member->id ? 'selected' : '' }}>{{ $member->full_name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -64,7 +72,7 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Documento</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Societa</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Associato a</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Categoria</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Scadenza</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Stato</th>
@@ -79,7 +87,17 @@
                             <a href="{{ route('documents.show', $document) }}" class="text-sm font-medium text-brand-900 hover:underline">{{ $document->title }}</a>
                             <p class="text-xs text-gray-500 mt-0.5">v{{ $document->current_version }} &middot; {{ $document->file_name_original }}</p>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-700">{{ $document->company?->denominazione ?? '-' }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">
+                            @if($document->member)
+                                <a href="{{ route('members.show', $document->member) }}" class="text-brand-600 hover:underline">{{ $document->member->full_name }}</a>
+                                <div class="text-xs text-gray-400">Membro</div>
+                            @elseif($document->company)
+                                <a href="{{ route('companies.show', $document->company) }}" class="text-brand-600 hover:underline">{{ $document->company->denominazione }}</a>
+                                <div class="text-xs text-gray-400">Societa</div>
+                            @else
+                                -
+                            @endif
+                        </td>
                         <td class="px-6 py-4">
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-800">{{ $document->category?->label ?? '-' }}</span>
                         </td>

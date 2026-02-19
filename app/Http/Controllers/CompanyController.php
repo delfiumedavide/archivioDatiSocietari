@@ -54,7 +54,7 @@ class CompanyController extends Controller
     public function show(Company $company): View
     {
         $company->load([
-            'officers' => fn ($q) => $q->active()->orderBy('ruolo'),
+            'officers' => fn ($q) => $q->with('member')->active()->orderBy('ruolo'),
             'shareholders' => fn ($q) => $q->active()->orderByDesc('quota_percentuale'),
             'documents' => fn ($q) => $q->with('category')->latest()->limit(10),
             'childRelationships.childCompany',

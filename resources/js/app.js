@@ -136,6 +136,46 @@ Alpine.data('tabs', (defaultTab = '') => ({
     },
 }));
 
+// Member search autocomplete component
+Alpine.data('memberSearch', () => ({
+    query: '',
+    results: [],
+    selectedId: '',
+    showResults: false,
+    loading: false,
+
+    async search() {
+        if (this.query.length < 2) {
+            this.results = [];
+            this.showResults = false;
+            return;
+        }
+        this.loading = true;
+        try {
+            const response = await fetch(`/members/search?term=${encodeURIComponent(this.query)}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+            if (response.ok) {
+                this.results = await response.json();
+                this.showResults = true;
+            }
+        } catch (e) {
+            this.results = [];
+        }
+        this.loading = false;
+    },
+
+    select(member) {
+        this.selectedId = member.id;
+        this.query = member.full_name + ' (' + member.codice_fiscale + ')';
+        this.showResults = false;
+    },
+}));
+
 Alpine.start();
 
 // Register Service Worker for push notifications

@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\Company;
 use App\Models\Document;
 use App\Models\DocumentCategory;
+use App\Models\Member;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -15,6 +16,7 @@ class DashboardService
     {
         return [
             'total_companies' => Company::active()->count(),
+            'total_members' => Member::active()->count(),
             'total_documents' => Document::count(),
             'expiring_count' => Document::expiring()->count(),
             'expired_count' => Document::expired()->count(),
@@ -100,7 +102,7 @@ class DashboardService
 
     public function getExpiringDocumentsList(int $limit = 20): Collection
     {
-        return Document::with(['company', 'category'])
+        return Document::with(['company', 'member', 'category'])
             ->where(function ($q) {
                 $q->expired()->orWhere(fn ($q2) => $q2->expiring());
             })

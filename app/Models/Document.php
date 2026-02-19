@@ -13,7 +13,7 @@ class Document extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'company_id', 'document_category_id', 'title', 'description',
+        'company_id', 'member_id', 'document_category_id', 'title', 'description',
         'file_path', 'file_name_original', 'file_mime_type', 'file_size',
         'current_version', 'expiration_date', 'expiration_notified',
         'expiration_status', 'uploaded_by', 'is_archived',
@@ -33,6 +33,11 @@ class Document extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function member(): BelongsTo
+    {
+        return $this->belongsTo(Member::class);
     }
 
     public function category(): BelongsTo
@@ -138,5 +143,28 @@ class Document extends Model
     public function scopeByCompany($query, int $companyId)
     {
         return $query->where('company_id', $companyId);
+    }
+
+    public function scopeByMember($query, int $memberId)
+    {
+        return $query->where('member_id', $memberId);
+    }
+
+    public function getOwnerNameAttribute(): string
+    {
+        if ($this->company_id) {
+            return $this->company?->denominazione ?? '-';
+        }
+
+        if ($this->member_id) {
+            return $this->member?->full_name ?? '-';
+        }
+
+        return '-';
+    }
+
+    public function getOwnerTypeAttribute(): string
+    {
+        return $this->member_id ? 'member' : 'company';
     }
 }

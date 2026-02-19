@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\Company;
 use App\Models\Document;
 use App\Models\DocumentCategory;
+use App\Models\Member;
 use App\Services\DocumentStorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,8 +22,9 @@ class DocumentController extends Controller
 
     public function index(Request $request): View
     {
-        $documents = Document::with(['company', 'category', 'uploader'])
+        $documents = Document::with(['company', 'member', 'category', 'uploader'])
             ->when($request->input('company_id'), fn ($q, $v) => $q->byCompany($v))
+            ->when($request->input('member_id'), fn ($q, $v) => $q->byMember($v))
             ->when($request->input('category_id'), fn ($q, $v) => $q->byCategory($v))
             ->when($request->input('status') === 'expiring', fn ($q) => $q->expiring())
             ->when($request->input('status') === 'expired', fn ($q) => $q->expired())
@@ -35,27 +37,40 @@ class DocumentController extends Controller
             ->withQueryString();
 
         $companies = Company::active()->orderBy('denominazione')->get();
+        $members = Member::active()->orderBy('cognome')->orderBy('nome')->get();
         $categories = DocumentCategory::orderBy('sort_order')->get();
 
-        return view('documents.index', compact('documents', 'companies', 'categories'));
+        return view('documents.index', compact('documents', 'companies', 'members', 'categories'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         $companies = Company::active()->orderBy('denominazione')->get();
-        $categories = DocumentCategory::orderBy('sort_order')->get();
+        $members = Member::active()->orderBy('cognome')->orderBy('nome')->get();
+        $companyCategories = DocumentCategory::forCompany()->orderBy('sort_order')->get();
+        $memberCategories = DocumentCategory::forMember()->orderBy('sort_order')->get();
+        $preselectedMemberId = $request->input('member_id');
 
-        return view('documents.upload', compact('companies', 'categories'));
+        return view('documents.upload', compact('companies', 'members', 'companyCategories', 'memberCategories', 'preselectedMemberId'));
     }
 
     public function store(StoreDocumentRequest $request): RedirectResponse
     {
         $file = $request->file('file');
         $category = DocumentCategory::findOrFail($request->input('document_category_id'));
-        $path = $this->storageService->store($file, $request->input('company_id'), $category->name);
+
+        $memberId = $request->input('member_id');
+        $companyId = $request->input('company_id');
+
+        if ($memberId) {
+            $path = $this->storageService->storeForMember($file, $memberId, $category->name);
+        } else {
+            $path = $this->storageService->store($file, $companyId, $category->name);
+        }
 
         $document = Document::create([
-            'company_id' => $request->input('company_id'),
+            'company_id' => $companyId,
+            'member_id' => $memberId,
             'document_category_id' => $request->input('document_category_id'),
             'title' => $request->input('title'),
             'description' => $request->input('description'),
@@ -84,7 +99,7 @@ class DocumentController extends Controller
 
     public function show(Document $document): View
     {
-        $document->load(['company', 'category', 'uploader', 'versions.uploader']);
+        $document->load(['company', 'member', 'category', 'uploader', 'versions.uploader']);
 
         return view('documents.show', compact('document'));
     }
@@ -139,12 +154,12 @@ class DocumentController extends Controller
 
     public function expiring(): View
     {
-        $expiring = Document::with(['company', 'category'])
+        $expiring = Document::with(['company', 'member', 'category'])
             ->expiring()
             ->orderBy('expiration_date')
             ->get();
 
-        $expired = Document::with(['company', 'category'])
+        $expired = Document::with(['company', 'member', 'category'])
             ->expired()
             ->orderBy('expiration_date')
             ->get();

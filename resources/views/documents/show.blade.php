@@ -41,10 +41,14 @@
                 <div class="card-body">
                     <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                         <div>
-                            <dt class="text-sm text-gray-500">Societa</dt>
+                            <dt class="text-sm text-gray-500">Associato a</dt>
                             <dd class="text-sm font-medium text-gray-900">
-                                @if($document->company)
+                                @if($document->member)
+                                    <a href="{{ route('members.show', $document->member) }}" class="text-brand-600 hover:underline">{{ $document->member->full_name }}</a>
+                                    <span class="text-xs text-gray-400 ml-1">(Membro)</span>
+                                @elseif($document->company)
                                     <a href="{{ route('companies.show', $document->company) }}" class="text-brand-600 hover:underline">{{ $document->company->denominazione }}</a>
+                                    <span class="text-xs text-gray-400 ml-1">(Societa)</span>
                                 @else
                                     <span class="text-gray-400">-</span>
                                 @endif

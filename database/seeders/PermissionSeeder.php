@@ -41,6 +41,17 @@ class PermissionSeeder extends Seeder
 
             // Activity Log
             ['name' => 'activity_log.view', 'section' => 'activity_log', 'label' => 'Visualizza Log Attività'],
+
+            // Membri
+            ['name' => 'membri.view', 'section' => 'membri', 'label' => 'Visualizza Membri'],
+            ['name' => 'membri.create', 'section' => 'membri', 'label' => 'Crea Membri'],
+            ['name' => 'membri.edit', 'section' => 'membri', 'label' => 'Modifica Membri'],
+            ['name' => 'membri.delete', 'section' => 'membri', 'label' => 'Elimina Membri'],
+            ['name' => 'membri.manage', 'section' => 'membri', 'label' => 'Gestisci Membri'],
+
+            // Stati Famiglia
+            ['name' => 'stati_famiglia.view', 'section' => 'stati_famiglia', 'label' => 'Visualizza Stati Famiglia'],
+            ['name' => 'stati_famiglia.manage', 'section' => 'stati_famiglia', 'label' => 'Gestisci Stati Famiglia'],
         ];
 
         foreach ($permissions as $permission) {

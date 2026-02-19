@@ -31,6 +31,23 @@ class DocumentStorageService
         return $path;
     }
 
+    public function storeForMember(UploadedFile $file, int $memberId, string $categorySlug): string
+    {
+        $hashedName = hash('sha256', $file->getClientOriginalName() . time() . Str::random(16));
+        $extension = $file->getClientOriginalExtension();
+        $year = date('Y');
+
+        $path = "members/{$memberId}/{$categorySlug}/{$year}/{$hashedName}.{$extension}";
+
+        Storage::disk($this->disk)->putFileAs(
+            dirname($path),
+            $file,
+            basename($path)
+        );
+
+        return $path;
+    }
+
     public function storeVersion(Document $document, UploadedFile $file, User $user, ?string $changeNotes = null): DocumentVersion
     {
         $version = DocumentVersion::create([
@@ -44,7 +61,11 @@ class DocumentStorageService
             'created_at' => now(),
         ]);
 
-        $newPath = $this->store($file, $document->company_id, $document->category->name);
+        if ($document->member_id) {
+            $newPath = $this->storeForMember($file, $document->member_id, $document->category->name);
+        } else {
+            $newPath = $this->store($file, $document->company_id, $document->category->name);
+        }
 
         $document->update([
             'file_path' => $newPath,

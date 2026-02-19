@@ -14,13 +14,14 @@ class CompanyOfficerController extends Controller
     public function store(StoreOfficerRequest $request, Company $company): RedirectResponse
     {
         $officer = $company->officers()->create($request->validated());
+        $officer->load('member');
 
         ActivityLog::create([
             'user_id' => $request->user()->id,
             'action' => 'created',
             'model_type' => CompanyOfficer::class,
             'model_id' => $officer->id,
-            'description' => "Aggiunta carica: {$officer->full_name} - {$officer->ruolo} ({$company->denominazione})",
+            'description' => "Aggiunta carica: {$officer->member->full_name} - {$officer->ruolo} ({$company->denominazione})",
             'ip_address' => $request->ip(),
             'user_agent' => substr((string) $request->userAgent(), 0, 500),
             'created_at' => now(),
@@ -33,13 +34,14 @@ class CompanyOfficerController extends Controller
     public function update(StoreOfficerRequest $request, CompanyOfficer $officer): RedirectResponse
     {
         $officer->update($request->validated());
+        $officer->load('member');
 
         ActivityLog::create([
             'user_id' => $request->user()->id,
             'action' => 'updated',
             'model_type' => CompanyOfficer::class,
             'model_id' => $officer->id,
-            'description' => "Modificata carica: {$officer->full_name} - {$officer->ruolo}",
+            'description' => "Modificata carica: {$officer->member->full_name} - {$officer->ruolo}",
             'ip_address' => $request->ip(),
             'user_agent' => substr((string) $request->userAgent(), 0, 500),
             'created_at' => now(),
@@ -52,6 +54,8 @@ class CompanyOfficerController extends Controller
     public function destroy(Request $request, CompanyOfficer $officer): RedirectResponse
     {
         $companyId = $officer->company_id;
+        $officer->load('member');
+        $fullName = $officer->member->full_name;
         $officer->delete();
 
         ActivityLog::create([
@@ -59,7 +63,7 @@ class CompanyOfficerController extends Controller
             'action' => 'deleted',
             'model_type' => CompanyOfficer::class,
             'model_id' => $officer->id,
-            'description' => "Rimossa carica: {$officer->full_name}",
+            'description' => "Rimossa carica: {$fullName}",
             'ip_address' => $request->ip(),
             'user_agent' => substr((string) $request->userAgent(), 0, 500),
             'created_at' => now(),

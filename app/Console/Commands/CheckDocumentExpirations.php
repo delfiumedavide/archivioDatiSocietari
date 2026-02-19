@@ -37,7 +37,7 @@ class CheckDocumentExpirations extends Command
 
             $pushService->sendToAdmins(
                 'Documento in scadenza',
-                "{$document->title} - {$document->company->denominazione} scade il {$document->expiration_date->format('d/m/Y')}",
+                "{$document->title} - {$document->owner_name} scade il {$document->expiration_date->format('d/m/Y')}",
                 route('documents.show', $document)
             );
 
@@ -49,7 +49,7 @@ class CheckDocumentExpirations extends Command
 
             $pushService->sendToAdmins(
                 'Documento scaduto!',
-                "{$document->title} - {$document->company->denominazione} è scaduto il {$document->expiration_date->format('d/m/Y')}",
+                "{$document->title} - {$document->owner_name} è scaduto il {$document->expiration_date->format('d/m/Y')}",
                 route('documents.show', $document)
             );
 

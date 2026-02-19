@@ -11,7 +11,15 @@
 <div class="max-w-3xl mx-auto">
     <h1 class="text-2xl font-bold text-gray-900 mb-6">Carica Documento</h1>
 
-    <form method="POST" action="{{ route('documents.store') }}" enctype="multipart/form-data" class="space-y-6">
+    <form method="POST" action="{{ route('documents.store') }}" enctype="multipart/form-data" class="space-y-6"
+          x-data="{
+              ownerType: '{{ old('member_id', $preselectedMemberId ?? '') ? 'member' : 'company' }}',
+              companyCategories: {{ Js::from($companyCategories) }},
+              memberCategories: {{ Js::from($memberCategories) }},
+              get categories() {
+                  return this.ownerType === 'member' ? this.memberCategories : this.companyCategories;
+              }
+          }">
         @csrf
 
         <div class="card">
@@ -19,24 +27,55 @@
                 <h2 class="text-lg font-semibold text-gray-900">Informazioni Documento</h2>
             </div>
             <div class="card-body space-y-4">
+
+                {{-- Owner Type Toggle --}}
+                <div>
+                    <label class="form-label">Documento per *</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="owner_type" value="company" x-model="ownerType" class="form-radio text-brand-600">
+                            <span class="text-sm font-medium text-gray-700">Societa</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="owner_type" value="member" x-model="ownerType" class="form-radio text-brand-600">
+                            <span class="text-sm font-medium text-gray-700">Membro</span>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                    {{-- Company Select --}}
+                    <div x-show="ownerType === 'company'" x-transition>
                         <label for="company_id" class="form-label">Societa *</label>
-                        <select name="company_id" id="company_id" class="form-select" required>
+                        <select name="company_id" id="company_id" class="form-select" :required="ownerType === 'company'">
                             <option value="">Seleziona societa...</option>
-                            @foreach(\App\Models\Company::active()->orderBy('denominazione')->get() as $company)
-                            <option value="{{ $company->id }}" {{ old('company_id') == $company->id ? 'selected' : '' }}>{{ $company->denominazione }}</option>
+                            @foreach($companies as $company)
+                            <option value="{{ $company->id }}" {{ old('company_id', request('company_id')) == $company->id ? 'selected' : '' }}>{{ $company->denominazione }}</option>
                             @endforeach
                         </select>
                         @error('company_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
+
+                    {{-- Member Select --}}
+                    <div x-show="ownerType === 'member'" x-transition>
+                        <label for="member_id" class="form-label">Membro *</label>
+                        <select name="member_id" id="member_id" class="form-select" :required="ownerType === 'member'">
+                            <option value="">Seleziona membro...</option>
+                            @foreach($members as $member)
+                            <option value="{{ $member->id }}" {{ old('member_id', $preselectedMemberId ?? '') == $member->id ? 'selected' : '' }}>{{ $member->full_name }} ({{ $member->codice_fiscale }})</option>
+                            @endforeach
+                        </select>
+                        @error('member_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+
+                    {{-- Category (dynamic based on owner type) --}}
                     <div>
                         <label for="document_category_id" class="form-label">Categoria *</label>
                         <select name="document_category_id" id="document_category_id" class="form-select" required>
                             <option value="">Seleziona categoria...</option>
-                            @foreach(\App\Models\DocumentCategory::orderBy('sort_order')->get() as $cat)
-                            <option value="{{ $cat->id }}" {{ old('document_category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->label }}</option>
-                            @endforeach
+                            <template x-for="cat in categories" :key="cat.id">
+                                <option :value="cat.id" x-text="cat.label" :selected="cat.id == '{{ old('document_category_id') }}'"></option>
+                            </template>
                         </select>
                         @error('document_category_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
