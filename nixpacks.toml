@@ -9,12 +9,5 @@ cmds = [
   "php artisan view:clear"
 ]
 
-[phases.deploy]
-cmds = [
-  "php artisan migrate --force",
-  "php artisan db:seed --class=DocumentCategorySeeder --force",
-  "php artisan db:seed --class=PermissionSeeder --force"
-]
-
 [start]
 cmd = "php artisan migrate --force && php artisan db:seed --class=DocumentCategorySeeder --force && php artisan db:seed --class=PermissionSeeder --force && php -S 0.0.0.0:${PORT:-8080} -t public"
