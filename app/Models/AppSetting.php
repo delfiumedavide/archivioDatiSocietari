@@ -17,6 +17,7 @@ class AppSetting extends Model
         'holding_telefono', 'holding_email', 'holding_pec',
         'holding_rea', 'holding_capitale_sociale',
         'declaration_header_title', 'declaration_header_subtitle', 'declaration_footer_text',
+        'notification_emails', 'expiry_reminder_days',
         'updated_by',
     ];
 

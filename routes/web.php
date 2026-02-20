@@ -11,6 +11,7 @@ use App\Http\Controllers\FamilyStatusController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ShareholderController;
+use App\Http\Controllers\EmailController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -96,6 +97,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('settings/logo', [SettingsController::class, 'uploadLogo'])->name('settings.upload-logo');
         Route::post('settings/favicon', [SettingsController::class, 'uploadFavicon'])->name('settings.upload-favicon');
         Route::delete('settings/logo', [SettingsController::class, 'removeLogo'])->name('settings.remove-logo');
+
+        // Email
+        Route::get('email', [EmailController::class, 'index'])->name('email.index');
+        Route::put('email/settings', [EmailController::class, 'updateSettings'])->name('email.update-settings');
+        Route::post('email/send-expiry-reminder', [EmailController::class, 'sendExpiryReminder'])->name('email.send-expiry-reminder');
+        Route::post('email/send-declarations', [EmailController::class, 'sendDeclarations'])->name('email.send-declarations');
     });
 
     // Notifications
