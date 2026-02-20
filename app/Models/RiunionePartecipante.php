@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RiunionePartecipante extends Model
 {
+    protected $table = 'riunione_partecipanti';
+
     protected $fillable = [
         'riunione_id', 'member_id', 'presenza', 'note',
     ];

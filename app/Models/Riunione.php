@@ -12,6 +12,8 @@ class Riunione extends Model
 {
     use SoftDeletes;
 
+    protected $table = 'riunioni';
+
     protected $fillable = [
         'company_id', 'tipo', 'data_ora', 'luogo', 'status',
         'ordine_del_giorno', 'convocazione_path', 'verbale_path',
