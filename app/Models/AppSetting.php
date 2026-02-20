@@ -18,6 +18,7 @@ class AppSetting extends Model
         'holding_rea', 'holding_capitale_sociale',
         'declaration_header_title', 'declaration_header_subtitle', 'declaration_footer_text',
         'notification_emails', 'expiry_reminder_days',
+        'expiry_reminder_enabled', 'expiry_reminder_time',
         'updated_by',
     ];
 
@@ -25,6 +26,7 @@ class AppSetting extends Model
     {
         return [
             'holding_capitale_sociale' => 'decimal:2',
+            'expiry_reminder_enabled'  => 'boolean',
         ];
     }
 

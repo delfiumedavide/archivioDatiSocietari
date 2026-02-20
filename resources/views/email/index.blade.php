@@ -67,22 +67,53 @@
             {{-- Form configurazione --}}
             <div class="lg:col-span-2">
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <h2 class="text-lg font-semibold text-gray-900 mb-1">Destinatari Memo Scadenze</h2>
-                    <p class="text-sm text-gray-500 mb-5">Inserisci un indirizzo email per riga. Riceveranno la memo automatica giornaliera e le notifiche manuali.</p>
+                    <h2 class="text-lg font-semibold text-gray-900 mb-1">Configurazione Promemoria</h2>
+                    <p class="text-sm text-gray-500 mb-5">Imposta i destinatari, i giorni di anticipo e l'orario di invio automatico giornaliero.</p>
 
-                    <form action="{{ route('email.update-settings') }}" method="POST">
+                    <form action="{{ route('email.update-settings') }}" method="POST"
+                          x-data="{ enabled: {{ $settings->expiry_reminder_enabled ?? true ? 'true' : 'false' }} }">
                         @csrf
                         @method('PUT')
 
                         <div class="space-y-5">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Indirizzi Email Notifiche</label>
-                                <textarea name="notification_emails" rows="6"
-                                    class="form-input font-mono text-sm"
-                                    placeholder="esempio@email.com&#10;altro@email.com">{{ old('notification_emails', $settings->notification_emails) }}</textarea>
-                                <p class="text-xs text-gray-400 mt-1">Un indirizzo per riga.</p>
+                            {{-- Toggle invio automatico --}}
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">Invio Automatico Giornaliero</p>
+                                    <p class="text-xs text-gray-500 mt-0.5">Abilita l'invio automatico della memo scadenze ogni giorno all'orario impostato.</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="hidden" name="expiry_reminder_enabled" value="0">
+                                    <input type="checkbox" name="expiry_reminder_enabled" value="1"
+                                        x-model="enabled"
+                                        {{ old('expiry_reminder_enabled', $settings->expiry_reminder_enabled ?? true) ? 'checked' : '' }}
+                                        class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                                </label>
                             </div>
 
+                            {{-- Orario invio --}}
+                            <div x-show="enabled" x-transition>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Orario Invio Automatico</label>
+                                <div class="flex items-center gap-3">
+                                    <input type="time" name="expiry_reminder_time"
+                                        value="{{ old('expiry_reminder_time', $settings->expiry_reminder_time ?? '08:00') }}"
+                                        class="form-input w-36">
+                                    <span class="text-sm text-gray-500">ogni giorno</span>
+                                </div>
+                                <p class="text-xs text-gray-400 mt-1">Modifica richiede il riavvio del processo scheduler.</p>
+                            </div>
+
+                            {{-- Indirizzi destinatari --}}
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Indirizzi Email Destinatari</label>
+                                <textarea name="notification_emails" rows="5"
+                                    class="form-input font-mono text-sm"
+                                    placeholder="esempio@email.com&#10;altro@email.com">{{ old('notification_emails', $settings->notification_emails) }}</textarea>
+                                <p class="text-xs text-gray-400 mt-1">Un indirizzo per riga. Riceveranno sia l'invio automatico che quello manuale.</p>
+                            </div>
+
+                            {{-- Giorni anticipo --}}
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Giorni Anticipo Promemoria</label>
                                 <div class="flex items-center gap-3">
@@ -146,7 +177,19 @@
 
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                     <h3 class="text-sm font-semibold text-gray-900 mb-2">Invio Automatico</h3>
-                    <p class="text-xs text-gray-500">La memo scadenze viene inviata automaticamente ogni giorno alle <strong>08:00</strong> se ci sono documenti in scadenza o scaduti.</p>
+                    @if($settings->expiry_reminder_enabled ?? true)
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+                            <span class="text-xs font-medium text-green-700">Attivo</span>
+                        </div>
+                        <p class="text-xs text-gray-500">La memo viene inviata ogni giorno alle <strong>{{ $settings->expiry_reminder_time ?? '08:00' }}</strong> se ci sono documenti da segnalare.</p>
+                    @else
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="inline-block w-2 h-2 bg-gray-400 rounded-full"></span>
+                            <span class="text-xs font-medium text-gray-500">Disabilitato</span>
+                        </div>
+                        <p class="text-xs text-gray-500">L'invio automatico è disabilitato. Attivalo dalla scheda <button type="button" @click="tab='config'" class="underline text-brand-600">Configurazione</button>.</p>
+                    @endif
                 </div>
             </div>
         </div>
@@ -262,8 +305,19 @@
 
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <h3 class="text-sm font-semibold text-gray-900 mb-2">Invio Automatico</h3>
+                        @if($settings->expiry_reminder_enabled ?? true)
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+                                <span class="text-xs font-medium text-green-700">Attivo — ore {{ $settings->expiry_reminder_time ?? '08:00' }}</span>
+                            </div>
+                        @else
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="inline-block w-2 h-2 bg-gray-400 rounded-full"></span>
+                                <span class="text-xs font-medium text-gray-500">Disabilitato</span>
+                            </div>
+                        @endif
                         <p class="text-xs text-gray-500">
-                            L'invio automatico avviene ogni giorno alle <strong>08:00</strong>, incluso solo se ci sono documenti da segnalare.
+                            Configura orario e destinatari nella scheda <button type="button" @click="tab='config'" class="underline text-brand-600">Configurazione</button>.
                         </p>
                     </div>
                 </div>

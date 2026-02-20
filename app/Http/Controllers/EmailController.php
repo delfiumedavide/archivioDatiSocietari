@@ -58,14 +58,18 @@ class EmailController extends Controller
     public function updateSettings(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'notification_emails'   => 'nullable|string|max:2000',
-            'expiry_reminder_days'  => 'required|integer|min:1|max:365',
+            'notification_emails'     => 'nullable|string|max:2000',
+            'expiry_reminder_days'    => 'required|integer|min:1|max:365',
+            'expiry_reminder_enabled' => 'nullable|boolean',
+            'expiry_reminder_time'    => 'nullable|regex:/^\d{2}:\d{2}$/',
         ]);
 
         $this->settingsService->update([
-            'notification_emails'  => $validated['notification_emails'] ?? null,
-            'expiry_reminder_days' => $validated['expiry_reminder_days'],
-            'updated_by'           => auth()->id(),
+            'notification_emails'     => $validated['notification_emails'] ?? null,
+            'expiry_reminder_days'    => $validated['expiry_reminder_days'],
+            'expiry_reminder_enabled' => isset($validated['expiry_reminder_enabled']) ? (bool) $validated['expiry_reminder_enabled'] : false,
+            'expiry_reminder_time'    => $validated['expiry_reminder_time'] ?? '08:00',
+            'updated_by'              => auth()->id(),
         ]);
 
         return redirect()->route('email.index', ['tab' => 'config'])
