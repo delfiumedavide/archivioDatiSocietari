@@ -113,7 +113,7 @@ class MemberController extends Controller
 
     public function search(Request $request): JsonResponse
     {
-        $term = $request->input('q', '');
+        $term = $request->input('term', $request->input('q', ''));
 
         if (strlen($term) < 2) {
             return response()->json([]);
