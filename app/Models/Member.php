@@ -52,6 +52,11 @@ class Member extends Model
         return $this->hasMany(FamilyMember::class);
     }
 
+    public function declarations(): HasMany
+    {
+        return $this->hasMany(FamilyStatusDeclaration::class)->orderByDesc('anno');
+    }
+
     public function companies(): BelongsToMany
     {
         return $this->belongsToMany(Company::class, 'company_officers')

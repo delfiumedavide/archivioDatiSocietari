@@ -55,6 +55,16 @@ Route::middleware(['auth'])->group(function () {
     // Family Status
     Route::middleware('permission:stati_famiglia')->group(function () {
         Route::get('family-status', [FamilyStatusController::class, 'index'])->name('family-status.index');
+
+        // Declarations (BEFORE {member} to avoid route conflicts)
+        Route::get('family-status/declarations', [FamilyStatusController::class, 'declarations'])->name('family-status.declarations');
+        Route::post('family-status/declarations/bulk-generate', [FamilyStatusController::class, 'bulkGenerate'])->name('family-status.declarations.bulk-generate');
+        Route::get('family-status/declarations/bulk-download', [FamilyStatusController::class, 'bulkDownload'])->name('family-status.declarations.bulk-download');
+        Route::get('family-status/declarations/{declaration}/download', [FamilyStatusController::class, 'downloadGenerated'])->name('family-status.declarations.download');
+        Route::post('family-status/declarations/{declaration}/upload-signed', [FamilyStatusController::class, 'uploadSigned'])->name('family-status.declarations.upload-signed');
+        Route::get('family-status/declarations/{declaration}/download-signed', [FamilyStatusController::class, 'downloadSigned'])->name('family-status.declarations.download-signed');
+        Route::post('family-status/{member}/declarations/generate', [FamilyStatusController::class, 'generateDeclaration'])->name('family-status.declarations.generate');
+
         Route::get('family-status/{member}', [FamilyStatusController::class, 'show'])->name('family-status.show');
         Route::post('family-status/{member}/status-change', [FamilyStatusController::class, 'storeStatusChange'])->name('family-status.store-change');
         Route::post('family-status/{member}/family-member', [FamilyStatusController::class, 'storeFamilyMember'])->name('family-status.store-family-member');
