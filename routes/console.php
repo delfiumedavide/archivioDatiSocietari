@@ -9,15 +9,21 @@ Schedule::command('documents:check-expirations')
     ->appendOutputTo(storage_path('logs/expiration-check.log'));
 
 // Invio email promemoria scadenze: abilitato e orario configurabili dalle Impostazioni Email
-$emailSettings = AppSetting::instance();
-
-if ($emailSettings->expiry_reminder_enabled ?? true) {
-    $time = preg_match('/^\d{2}:\d{2}$/', $emailSettings->expiry_reminder_time ?? '')
+// Il try/catch evita errori durante il build (quando il DB non è disponibile)
+try {
+    $emailSettings = AppSetting::instance();
+    $reminderEnabled = $emailSettings->expiry_reminder_enabled ?? true;
+    $reminderTime = preg_match('/^\d{2}:\d{2}$/', $emailSettings->expiry_reminder_time ?? '')
         ? $emailSettings->expiry_reminder_time
         : '08:00';
+} catch (\Throwable $e) {
+    $reminderEnabled = true;
+    $reminderTime = '08:00';
+}
 
+if ($reminderEnabled) {
     Schedule::command('email:send-expiry-reminder')
-        ->dailyAt($time)
+        ->dailyAt($reminderTime)
         ->withoutOverlapping()
         ->appendOutputTo(storage_path('logs/expiry-email.log'));
 }
