@@ -10,7 +10,9 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use App\Services\AppSettingsService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,7 +21,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(AppSettingsService::class);
     }
 
     /**
@@ -33,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureRateLimiting();
         $this->registerObservers();
+        $this->registerViewComposers();
     }
 
     /**
@@ -57,5 +60,12 @@ class AppServiceProvider extends ServiceProvider
     {
         Document::observe(DocumentObserver::class);
         Company::observe(CompanyObserver::class);
+    }
+
+    protected function registerViewComposers(): void
+    {
+        View::composer(['layouts.app', 'layouts.guest'], function ($view) {
+            $view->with('appSettings', app(AppSettingsService::class)->get());
+        });
     }
 }

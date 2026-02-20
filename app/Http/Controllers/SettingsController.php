@@ -1,0 +1,131 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\ActivityLog;
+use App\Services\AppSettingsService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+
+class SettingsController extends Controller
+{
+    public function __construct(
+        private AppSettingsService $settingsService
+    ) {}
+
+    public function index(): View
+    {
+        $settings = $this->settingsService->get();
+
+        return view('settings.index', compact('settings'));
+    }
+
+    public function update(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'app_name' => ['required', 'string', 'max:100'],
+            'app_subtitle' => ['required', 'string', 'max:100'],
+            'login_title' => ['nullable', 'string', 'max:100'],
+            'holding_ragione_sociale' => ['nullable', 'string', 'max:200'],
+            'holding_forma_giuridica' => ['nullable', 'string', 'max:50'],
+            'holding_codice_fiscale' => ['nullable', 'string', 'max:16'],
+            'holding_partita_iva' => ['nullable', 'string', 'max:11'],
+            'holding_indirizzo' => ['nullable', 'string', 'max:200'],
+            'holding_citta' => ['nullable', 'string', 'max:100'],
+            'holding_provincia' => ['nullable', 'string', 'max:2'],
+            'holding_cap' => ['nullable', 'string', 'max:5'],
+            'holding_telefono' => ['nullable', 'string', 'max:20'],
+            'holding_email' => ['nullable', 'string', 'email', 'max:100'],
+            'holding_pec' => ['nullable', 'string', 'email', 'max:100'],
+            'holding_rea' => ['nullable', 'string', 'max:50'],
+            'holding_capitale_sociale' => ['nullable', 'numeric', 'min:0'],
+            'declaration_header_title' => ['nullable', 'string', 'max:200'],
+            'declaration_header_subtitle' => ['nullable', 'string', 'max:200'],
+            'declaration_footer_text' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $validated['updated_by'] = $request->user()->id;
+
+        $this->settingsService->update($validated);
+
+        ActivityLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'updated',
+            'model_type' => \App\Models\AppSetting::class,
+            'model_id' => 1,
+            'description' => 'Aggiornate impostazioni generali',
+            'ip_address' => $request->ip(),
+            'user_agent' => substr((string) $request->userAgent(), 0, 500),
+            'created_at' => now(),
+        ]);
+
+        return redirect()->route('settings.index')
+            ->with('success', 'Impostazioni aggiornate.');
+    }
+
+    public function uploadLogo(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'logo' => ['required', 'file', 'max:2048', 'mimes:svg,png,jpg,jpeg,webp'],
+        ]);
+
+        $this->settingsService->updateLogo($request->file('logo'));
+
+        ActivityLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'uploaded',
+            'model_type' => \App\Models\AppSetting::class,
+            'model_id' => 1,
+            'description' => 'Aggiornato logo del gestionale',
+            'ip_address' => $request->ip(),
+            'user_agent' => substr((string) $request->userAgent(), 0, 500),
+            'created_at' => now(),
+        ]);
+
+        return redirect()->route('settings.index')
+            ->with('success', 'Logo aggiornato.');
+    }
+
+    public function uploadFavicon(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'favicon' => ['required', 'file', 'max:1024', 'mimes:svg,png,ico'],
+        ]);
+
+        $this->settingsService->updateFavicon($request->file('favicon'));
+
+        ActivityLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'uploaded',
+            'model_type' => \App\Models\AppSetting::class,
+            'model_id' => 1,
+            'description' => 'Aggiornata favicon del gestionale',
+            'ip_address' => $request->ip(),
+            'user_agent' => substr((string) $request->userAgent(), 0, 500),
+            'created_at' => now(),
+        ]);
+
+        return redirect()->route('settings.index')
+            ->with('success', 'Favicon aggiornata.');
+    }
+
+    public function removeLogo(Request $request): RedirectResponse
+    {
+        $this->settingsService->removeLogo();
+
+        ActivityLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'deleted',
+            'model_type' => \App\Models\AppSetting::class,
+            'model_id' => 1,
+            'description' => 'Rimosso logo personalizzato',
+            'ip_address' => $request->ip(),
+            'user_agent' => substr((string) $request->userAgent(), 0, 500),
+            'created_at' => now(),
+        ]);
+
+        return redirect()->route('settings.index')
+            ->with('success', 'Logo rimosso. Ripristinato quello predefinito.');
+    }
+}

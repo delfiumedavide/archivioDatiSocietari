@@ -15,11 +15,14 @@ class DeclarationService
 {
     private string $disk = 'documents';
 
+    public function __construct(private AppSettingsService $settingsService) {}
+
     public function generate(Member $member, int $year, int $userId): FamilyStatusDeclaration
     {
         $member->load(['familyMembers' => fn ($q) => $q->active()]);
 
         $statoCivile = $member->current_stato_civile;
+        $appSettings = $this->settingsService->get();
 
         $pdf = Pdf::loadView('family-status.declaration-pdf', [
             'member' => $member,
@@ -27,6 +30,7 @@ class DeclarationService
             'statoCivile' => $statoCivile,
             'familyMembers' => $member->familyMembers->whereNull('data_fine'),
             'generatedAt' => now(),
+            'appSettings' => $appSettings,
         ]);
 
         $path = "declarations/{$member->id}/{$year}/dichiarazione.pdf";

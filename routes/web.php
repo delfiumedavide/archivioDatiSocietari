@@ -11,6 +11,7 @@ use App\Http\Controllers\FamilyStatusController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ShareholderController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -88,6 +89,13 @@ Route::middleware(['auth'])->group(function () {
     // User management (admin only)
     Route::middleware('role:admin')->group(function () {
         Route::resource('users', UserController::class);
+
+        // Settings
+        Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
+        Route::post('settings/logo', [SettingsController::class, 'uploadLogo'])->name('settings.upload-logo');
+        Route::post('settings/favicon', [SettingsController::class, 'uploadFavicon'])->name('settings.upload-favicon');
+        Route::delete('settings/logo', [SettingsController::class, 'removeLogo'])->name('settings.remove-logo');
     });
 
     // Notifications

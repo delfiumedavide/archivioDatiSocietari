@@ -114,8 +114,8 @@
 </head>
 <body>
     <div class="header">
-        <h1>Gruppo Di Martino</h1>
-        <h2>Dichiarazione dello Stato di Famiglia</h2>
+        <h1>{{ $appSettings->declaration_header_title ?? 'Gruppo Di Martino' }}</h1>
+        <h2>{{ $appSettings->declaration_header_subtitle ?? 'Dichiarazione dello Stato di Famiglia' }}</h2>
         <div class="subtitle">Anno {{ $anno }}</div>
     </div>
 
@@ -216,7 +216,11 @@
     </div>
 
     <div class="footer">
-        Generato il {{ $generatedAt->format('d/m/Y H:i') }} dal sistema Archivio Societario — Gruppo Di Martino
+        @if($appSettings->declaration_footer_text ?? false)
+            {{ $appSettings->declaration_footer_text }} — Generato il {{ $generatedAt->format('d/m/Y H:i') }}
+        @else
+            Generato il {{ $generatedAt->format('d/m/Y H:i') }} dal sistema Archivio Societario — {{ $appSettings->declaration_header_title ?? 'Gruppo Di Martino' }}
+        @endif
     </div>
 </body>
 </html>
