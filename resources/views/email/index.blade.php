@@ -135,46 +135,138 @@
                 </div>
             </div>
 
-            {{-- Info SMTP --}}
-            <div class="space-y-4">
+            {{-- Form SMTP + Stato invio automatico --}}
+            <div class="space-y-4"
+                 x-data="{
+                     testStatus: null,
+                     testMessage: '',
+                     testing: false,
+                     async testConnection() {
+                         this.testing = true;
+                         this.testStatus = null;
+                         const form = document.getElementById('smtp-form');
+                         const data = new FormData(form);
+                         const body = new URLSearchParams({
+                             smtp_host: data.get('smtp_host') || '',
+                             smtp_port: data.get('smtp_port') || '',
+                             _token: data.get('_token') || '',
+                         });
+                         try {
+                             const res = await fetch('{{ route('email.test-smtp') }}', {
+                                 method: 'POST',
+                                 headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                                 body: body,
+                             });
+                             const json = await res.json();
+                             this.testStatus = json.ok ? 'ok' : 'error';
+                             this.testMessage = json.message;
+                         } catch(e) {
+                             this.testStatus = 'error';
+                             this.testMessage = 'Errore di rete.';
+                         }
+                         this.testing = false;
+                     }
+                 }">
+
+                {{-- Card configurazione SMTP --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-1 flex items-center gap-2">
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                         </svg>
-                        Configurazione SMTP
+                        Server SMTP
                     </h3>
-                    <dl class="space-y-2 text-xs">
-                        <div class="flex justify-between">
-                            <dt class="text-gray-500">Driver</dt>
-                            <dd class="font-mono font-medium text-gray-800">{{ config('mail.default', 'N/D') }}</dd>
+                    <p class="text-xs text-gray-500 mb-4">Configura le credenziali del server di posta. Sovrascrive le variabili d'ambiente.</p>
+
+                    <form id="smtp-form" action="{{ route('email.update-smtp') }}" method="POST">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="space-y-3">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="col-span-2">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Host SMTP</label>
+                                    <input type="text" name="smtp_host"
+                                        value="{{ old('smtp_host', $settings->smtp_host) }}"
+                                        placeholder="{{ config('mail.mailers.smtp.host', 'smtp.esempio.com') }}"
+                                        class="form-input text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Porta</label>
+                                    <input type="number" name="smtp_port" min="1" max="65535"
+                                        value="{{ old('smtp_port', $settings->smtp_port) }}"
+                                        placeholder="{{ config('mail.mailers.smtp.port', 587) }}"
+                                        class="form-input text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Crittografia</label>
+                                    <select name="smtp_encryption" class="form-input text-sm">
+                                        <option value="">Nessuna</option>
+                                        <option value="tls" {{ old('smtp_encryption', $settings->smtp_encryption) === 'tls' ? 'selected' : '' }}>TLS</option>
+                                        <option value="ssl" {{ old('smtp_encryption', $settings->smtp_encryption) === 'ssl' ? 'selected' : '' }}>SSL</option>
+                                        <option value="starttls" {{ old('smtp_encryption', $settings->smtp_encryption) === 'starttls' ? 'selected' : '' }}>STARTTLS</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Username</label>
+                                    <input type="text" name="smtp_username" autocomplete="off"
+                                        value="{{ old('smtp_username', $settings->smtp_username) }}"
+                                        placeholder="utente@provider.com"
+                                        class="form-input text-sm">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Password</label>
+                                    <input type="password" name="smtp_password" autocomplete="new-password"
+                                        placeholder="{{ $settings->smtp_password ? '••••••••  (invariata se vuoto)' : 'Nuova password' }}"
+                                        class="form-input text-sm">
+                                    @if($settings->smtp_password)
+                                        <p class="text-xs text-gray-400 mt-0.5">Lascia vuoto per mantenere la password attuale.</p>
+                                    @endif
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Indirizzo Mittente</label>
+                                    <input type="email" name="smtp_from_address"
+                                        value="{{ old('smtp_from_address', $settings->smtp_from_address) }}"
+                                        placeholder="{{ config('mail.from.address', 'noreply@esempio.com') }}"
+                                        class="form-input text-sm">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Nome Mittente</label>
+                                    <input type="text" name="smtp_from_name"
+                                        value="{{ old('smtp_from_name', $settings->smtp_from_name) }}"
+                                        placeholder="{{ config('mail.from.name', 'Archivio Societario') }}"
+                                        class="form-input text-sm">
+                                </div>
+                            </div>
+
+                            {{-- Feedback test connessione --}}
+                            <div x-show="testStatus !== null" x-transition class="rounded-lg px-3 py-2 text-xs font-medium"
+                                :class="testStatus === 'ok' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'">
+                                <span x-text="testMessage"></span>
+                            </div>
+
+                            <div class="flex gap-2 pt-1">
+                                <button type="button" @click="testConnection()"
+                                    :disabled="testing"
+                                    class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60">
+                                    <svg x-show="!testing" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                    </svg>
+                                    <svg x-show="testing" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                                    </svg>
+                                    <span x-text="testing ? 'Test...' : 'Testa Connessione'"></span>
+                                </button>
+                                <button type="submit" class="flex-1 btn-primary text-xs py-2 justify-center">
+                                    Salva SMTP
+                                </button>
+                            </div>
                         </div>
-                        <div class="flex justify-between">
-                            <dt class="text-gray-500">Host</dt>
-                            <dd class="font-mono font-medium text-gray-800">{{ config('mail.mailers.smtp.host', 'N/D') }}</dd>
-                        </div>
-                        <div class="flex justify-between">
-                            <dt class="text-gray-500">Porta</dt>
-                            <dd class="font-mono font-medium text-gray-800">{{ config('mail.mailers.smtp.port', 'N/D') }}</dd>
-                        </div>
-                        <div class="flex justify-between">
-                            <dt class="text-gray-500">Crittografia</dt>
-                            <dd class="font-mono font-medium text-gray-800">{{ config('mail.mailers.smtp.encryption', 'nessuna') }}</dd>
-                        </div>
-                        <div class="flex justify-between">
-                            <dt class="text-gray-500">Mittente</dt>
-                            <dd class="font-mono font-medium text-gray-800 truncate max-w-32">{{ config('mail.from.address', 'N/D') }}</dd>
-                        </div>
-                    </dl>
-                    <div class="mt-4 p-3 bg-blue-50 rounded-lg">
-                        <p class="text-xs text-blue-700">
-                            Configura SMTP tramite variabili d'ambiente:<br>
-                            <code class="font-mono">MAIL_HOST</code>, <code class="font-mono">MAIL_PORT</code>,<br>
-                            <code class="font-mono">MAIL_USERNAME</code>, <code class="font-mono">MAIL_PASSWORD</code>
-                        </p>
-                    </div>
+                    </form>
                 </div>
 
+                {{-- Stato invio automatico --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                     <h3 class="text-sm font-semibold text-gray-900 mb-2">Invio Automatico</h3>
                     @if($settings->expiry_reminder_enabled ?? true)

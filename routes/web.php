@@ -117,6 +117,8 @@ Route::middleware(['auth'])->group(function () {
         Route::put('email/settings', [EmailController::class, 'updateSettings'])->name('email.update-settings');
         Route::post('email/send-expiry-reminder', [EmailController::class, 'sendExpiryReminder'])->name('email.send-expiry-reminder');
         Route::post('email/send-declarations', [EmailController::class, 'sendDeclarations'])->name('email.send-declarations');
+        Route::put('email/smtp', [EmailController::class, 'updateSmtpSettings'])->name('email.update-smtp');
+        Route::post('email/smtp-test', [EmailController::class, 'testSmtpConnection'])->name('email.test-smtp');
 
         // Libri Sociali
         Route::prefix('libri-sociali')->name('libri-sociali.')->group(function () {

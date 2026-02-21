@@ -36,6 +36,38 @@ class AppServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
         $this->registerObservers();
         $this->registerViewComposers();
+        $this->applyMailConfig();
+    }
+
+    /**
+     * Override mail config from DB settings (if configured).
+     * Falls back to .env values if no SMTP host is saved in DB.
+     */
+    protected function applyMailConfig(): void
+    {
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('app_settings')) {
+                return;
+            }
+
+            $settings = \App\Models\AppSetting::first();
+
+            if (!$settings || empty($settings->smtp_host)) {
+                return;
+            }
+
+            config([
+                'mail.mailers.smtp.host'       => $settings->smtp_host,
+                'mail.mailers.smtp.port'       => $settings->smtp_port ?? 587,
+                'mail.mailers.smtp.encryption' => $settings->smtp_encryption ?: null,
+                'mail.mailers.smtp.username'   => $settings->smtp_username,
+                'mail.mailers.smtp.password'   => $settings->smtp_password,
+                'mail.from.address'            => $settings->smtp_from_address ?: config('mail.from.address'),
+                'mail.from.name'               => $settings->smtp_from_name ?: config('mail.from.name'),
+            ]);
+        } catch (\Throwable) {
+            // Silently skip if DB unavailable (e.g. during fresh migrations)
+        }
     }
 
     /**

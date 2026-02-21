@@ -8,6 +8,7 @@ use App\Models\Document;
 use App\Models\FamilyStatusDeclaration;
 use App\Models\Member;
 use App\Services\AppSettingsService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -128,6 +129,76 @@ class EmailController extends Controller
 
         return redirect()->route('email.index', ['tab' => 'scadenze'])
             ->with($errors ? 'warning' : 'success', $message);
+    }
+
+    public function updateSmtpSettings(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'smtp_host'         => 'nullable|string|max:255',
+            'smtp_port'         => 'nullable|integer|min:1|max:65535',
+            'smtp_encryption'   => 'nullable|in:tls,ssl,starttls',
+            'smtp_username'     => 'nullable|string|max:255',
+            'smtp_password'     => 'nullable|string|max:500',
+            'smtp_from_address' => 'nullable|email|max:255',
+            'smtp_from_name'    => 'nullable|string|max:255',
+        ]);
+
+        $data = [
+            'smtp_host'         => $validated['smtp_host'] ?? null,
+            'smtp_port'         => $validated['smtp_port'] ?? null,
+            'smtp_encryption'   => $validated['smtp_encryption'] ?? null,
+            'smtp_username'     => $validated['smtp_username'] ?? null,
+            'smtp_from_address' => $validated['smtp_from_address'] ?? null,
+            'smtp_from_name'    => $validated['smtp_from_name'] ?? null,
+            'updated_by'        => auth()->id(),
+        ];
+
+        // Only update password if a new one was provided
+        if (!empty($validated['smtp_password'])) {
+            $data['smtp_password'] = $validated['smtp_password'];
+        }
+
+        $this->settingsService->update($data);
+
+        return redirect()->route('email.index', ['tab' => 'config'])
+            ->with('success', 'Configurazione SMTP salvata.');
+    }
+
+    public function testSmtpConnection(Request $request): JsonResponse
+    {
+        $host = trim($request->input('smtp_host', ''));
+        $port = (int) $request->input('smtp_port', 587);
+
+        if (empty($host)) {
+            return response()->json(['ok' => false, 'message' => 'Inserisci un host SMTP prima di testare la connessione.']);
+        }
+
+        if ($port < 1 || $port > 65535) {
+            return response()->json(['ok' => false, 'message' => 'Porta non valida.']);
+        }
+
+        $errno  = 0;
+        $errstr = '';
+
+        try {
+            $socket = @stream_socket_client("tcp://{$host}:{$port}", $errno, $errstr, 5);
+
+            if ($socket) {
+                fclose($socket);
+
+                return response()->json([
+                    'ok'      => true,
+                    'message' => "Connessione a {$host}:{$port} riuscita.",
+                ]);
+            }
+
+            return response()->json([
+                'ok'      => false,
+                'message' => "Impossibile connettersi a {$host}:{$port}" . ($errstr ? ": {$errstr}" : '.'),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'message' => 'Errore: ' . $e->getMessage()]);
+        }
     }
 
     public function sendDeclarations(Request $request): RedirectResponse

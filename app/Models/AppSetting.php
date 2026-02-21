@@ -19,6 +19,9 @@ class AppSetting extends Model
         'declaration_header_title', 'declaration_header_subtitle', 'declaration_footer_text',
         'notification_emails', 'expiry_reminder_days',
         'expiry_reminder_enabled', 'expiry_reminder_time',
+        'smtp_host', 'smtp_port', 'smtp_encryption',
+        'smtp_username', 'smtp_password',
+        'smtp_from_address', 'smtp_from_name',
         'updated_by',
     ];
 
@@ -27,6 +30,8 @@ class AppSetting extends Model
         return [
             'holding_capitale_sociale' => 'decimal:2',
             'expiry_reminder_enabled'  => 'boolean',
+            'smtp_port'                => 'integer',
+            'smtp_password'            => 'encrypted',
         ];
     }
 
