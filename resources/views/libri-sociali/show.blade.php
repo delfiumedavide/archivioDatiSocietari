@@ -1,9 +1,9 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', $riunione->tipo_short . ' — ' . $riunione->data_ora->format('d/m/Y'))
 @section('breadcrumb')
-<span class="text-gray-400 font-light text-base select-none">&rsaquo;</span>
+<span class="text-gray-400">/</span>
 <a href="{{ route('libri-sociali.index') }}" class="text-gray-600 hover:text-gray-900">Libri Sociali</a>
-<span class="text-gray-400 font-light text-base select-none">&rsaquo;</span>
+<span class="text-gray-400">/</span>
 <span class="text-gray-700 font-medium">{{ $riunione->tipo_short }}</span>
 @endsection
 

@@ -1,11 +1,12 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Dichiarazioni Stato Famiglia')
 
 @section('breadcrumb')
-    <span class="text-gray-400 font-light text-base select-none">&rsaquo;</span>
-    <a href="{{ route('family-status.index') }}" class="text-gray-500 hover:text-brand-600 transition-colors font-medium">Stati Famiglia</a>
-    <span class="text-gray-400 font-light text-base select-none">&rsaquo;</span>
+    <a href="{{ route('dashboard') }}" class="hover:text-brand-600">Home</a>
+    <span class="mx-2">/</span>
+    <a href="{{ route('family-status.index') }}" class="hover:text-brand-600">Stati Famiglia</a>
+    <span class="mx-2">/</span>
     <span class="text-gray-700 font-medium">Dichiarazioni {{ $year }}</span>
 @endsection
 

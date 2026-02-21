@@ -1,9 +1,9 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Nuova Societa')
 @section('breadcrumb')
-<span class="text-gray-400 font-light text-base select-none">&rsaquo;</span>
+<span class="text-gray-400">/</span>
 <a href="{{ route('companies.index') }}" class="text-brand-600 hover:underline">Societa</a>
-<span class="text-gray-400 font-light text-base select-none">&rsaquo;</span>
+<span class="text-gray-400">/</span>
 <span class="text-gray-700 font-medium">Nuova</span>
 @endsection
 

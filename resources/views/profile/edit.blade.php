@@ -1,9 +1,10 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Il mio profilo')
 
 @section('breadcrumb')
-    <span class="text-gray-400 font-light text-base select-none">&rsaquo;</span>
+    <a href="{{ route('dashboard') }}" class="hover:text-brand-600">Home</a>
+    <span class="mx-2">/</span>
     <span class="text-gray-700 font-medium">Profilo</span>
 @endsection
 

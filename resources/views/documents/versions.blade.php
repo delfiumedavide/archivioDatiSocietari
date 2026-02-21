@@ -1,11 +1,11 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Versioni - ' . $document->title)
 @section('breadcrumb')
-<span class="text-gray-400 font-light text-base select-none">&rsaquo;</span>
+<span class="text-gray-400">/</span>
 <a href="{{ route('documents.index') }}" class="text-brand-600 hover:underline">Documenti</a>
-<span class="text-gray-400 font-light text-base select-none">&rsaquo;</span>
+<span class="text-gray-400">/</span>
 <a href="{{ route('documents.show', $document) }}" class="text-brand-600 hover:underline">{{ Str::limit($document->title, 20) }}</a>
-<span class="text-gray-400 font-light text-base select-none">&rsaquo;</span>
+<span class="text-gray-400">/</span>
 <span class="text-gray-700 font-medium">Versioni</span>
 @endsection
 

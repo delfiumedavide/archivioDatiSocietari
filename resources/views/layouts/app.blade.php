@@ -142,6 +142,10 @@
                         <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden text-gray-500 hover:text-gray-700">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                         </button>
+                        {{-- Breadcrumb --}}
+                        <nav class="text-sm text-gray-500 hidden sm:block">
+                            @yield('breadcrumb')
+                        </nav>
                     </div>
 
                     <div class="flex items-center gap-4">
@@ -172,16 +176,6 @@
                     </div>
                 </div>
             </header>
-
-            {{-- Breadcrumb bar --}}
-            <div class="bg-white border-b border-gray-200 px-4 lg:px-6 py-2">
-                <nav class="flex items-center gap-1.5 text-sm text-gray-500">
-                    <a href="{{ route('dashboard') }}"
-                       class="text-gray-500 hover:text-brand-600 transition-colors font-medium"
-                       title="Dashboard">Home</a>
-                    @yield('breadcrumb')
-                </nav>
-            </div>
 
             {{-- Flash Messages --}}
             @if(session('success'))

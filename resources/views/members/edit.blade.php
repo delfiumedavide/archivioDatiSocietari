@@ -1,11 +1,11 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Modifica ' . $member->full_name)
 @section('breadcrumb')
-<span class="text-gray-400 font-light text-base select-none">&rsaquo;</span>
+<span class="text-gray-400">/</span>
 <a href="{{ route('members.index') }}" class="text-brand-600 hover:underline">Membri</a>
-<span class="text-gray-400 font-light text-base select-none">&rsaquo;</span>
+<span class="text-gray-400">/</span>
 <a href="{{ route('members.show', $member) }}" class="text-brand-600 hover:underline">{{ $member->full_name }}</a>
-<span class="text-gray-400 font-light text-base select-none">&rsaquo;</span>
+<span class="text-gray-400">/</span>
 <span class="text-gray-700 font-medium">Modifica</span>
 @endsection
 

@@ -1,9 +1,10 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Dashboard')
 
 @section('breadcrumb')
-    <span class="text-gray-600 font-medium">Dashboard</span>
+    <span class="text-gray-400">/</span>
+    <a href="{{ route('dashboard') }}" class="text-brand-600 font-medium">Home</a>
 @endsection
 
 @section('content')

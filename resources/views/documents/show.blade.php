@@ -1,9 +1,9 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', $document->title)
 @section('breadcrumb')
-<span class="text-gray-400 font-light text-base select-none">&rsaquo;</span>
+<span class="text-gray-400">/</span>
 <a href="{{ route('documents.index') }}" class="text-brand-600 hover:underline">Documenti</a>
-<span class="text-gray-400 font-light text-base select-none">&rsaquo;</span>
+<span class="text-gray-400">/</span>
 <span class="text-gray-700 font-medium">{{ Str::limit($document->title, 30) }}</span>
 @endsection
 
