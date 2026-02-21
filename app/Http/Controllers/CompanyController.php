@@ -14,7 +14,10 @@ class CompanyController extends Controller
 {
     public function index(Request $request): View
     {
+        $user = $request->user()->load('companies');
+
         $companies = Company::query()
+            ->forUser($user)
             ->search($request->input('search'))
             ->when($request->input('forma_giuridica'), fn ($q, $v) => $q->where('forma_giuridica', $v))
             ->when($request->input('status') === 'active', fn ($q) => $q->active())
@@ -37,53 +40,70 @@ class CompanyController extends Controller
         $company = Company::create($request->validated());
 
         ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'created',
-            'model_type' => Company::class,
-            'model_id' => $company->id,
+            'user_id'     => $request->user()->id,
+            'action'      => 'created',
+            'model_type'  => Company::class,
+            'model_id'    => $company->id,
             'description' => "Creata società: {$company->denominazione}",
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
+            'ip_address'  => $request->ip(),
+            'user_agent'  => substr((string) $request->userAgent(), 0, 500),
+            'created_at'  => now(),
         ]);
 
         return redirect()->route('companies.show', $company)
             ->with('success', 'Società creata con successo.');
     }
 
-    public function show(Company $company): View
+    public function show(Request $request, Company $company): View
     {
+        abort_unless($request->user()->load('companies')->canAccessCompany($company), 403);
+
         $company->load([
-            'officers' => fn ($q) => $q->with('member')->active()->orderBy('ruolo'),
-            'shareholders' => fn ($q) => $q->active()->orderByDesc('quota_percentuale'),
-            'documents' => fn ($q) => $q->with('category')->latest()->limit(10),
+            'officers'                    => fn ($q) => $q->with('member')->active()->orderBy('ruolo'),
+            'shareholders'                => fn ($q) => $q->active()->orderByDesc('quota_percentuale'),
+            'documents'                   => fn ($q) => $q->with('category')->latest()->limit(10),
             'childRelationships.childCompany',
             'parentRelationships.parentCompany',
         ]);
 
-        return view('companies.show', compact('company'));
+        $ceasedOfficers = $company->officers()
+            ->with('member')
+            ->whereNotNull('data_cessazione')
+            ->orderByDesc('data_cessazione')
+            ->get();
+
+        $otherCompanies = Company::active()
+            ->where('id', '!=', $company->id)
+            ->orderBy('denominazione')
+            ->get(['id', 'denominazione']);
+
+        return view('companies.show', compact('company', 'ceasedOfficers', 'otherCompanies'));
     }
 
-    public function edit(Company $company): View
+    public function edit(Request $request, Company $company): View
     {
+        abort_unless($request->user()->load('companies')->canAccessCompany($company), 403);
+
         return view('companies.edit', compact('company'));
     }
 
     public function update(UpdateCompanyRequest $request, Company $company): RedirectResponse
     {
+        abort_unless($request->user()->load('companies')->canAccessCompany($company), 403);
+
         $oldValues = $company->toArray();
         $company->update($request->validated());
 
         ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'updated',
-            'model_type' => Company::class,
-            'model_id' => $company->id,
+            'user_id'     => $request->user()->id,
+            'action'      => 'updated',
+            'model_type'  => Company::class,
+            'model_id'    => $company->id,
             'description' => "Modificata società: {$company->denominazione}",
-            'properties' => ['old' => $oldValues, 'new' => $company->fresh()->toArray()],
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
+            'properties'  => ['old' => $oldValues, 'new' => $company->fresh()->toArray()],
+            'ip_address'  => $request->ip(),
+            'user_agent'  => substr((string) $request->userAgent(), 0, 500),
+            'created_at'  => now(),
         ]);
 
         return redirect()->route('companies.show', $company)
@@ -100,14 +120,14 @@ class CompanyController extends Controller
         $company->delete();
 
         ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'deleted',
-            'model_type' => Company::class,
-            'model_id' => $company->id,
+            'user_id'     => $request->user()->id,
+            'action'      => 'deleted',
+            'model_type'  => Company::class,
+            'model_id'    => $company->id,
             'description' => "Eliminata società: {$denominazione}",
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
+            'ip_address'  => $request->ip(),
+            'user_agent'  => substr((string) $request->userAgent(), 0, 500),
+            'created_at'  => now(),
         ]);
 
         return redirect()->route('companies.index')

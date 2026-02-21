@@ -322,7 +322,7 @@
                 </form>
             </div>
 
-            {{-- Officers Table --}}
+            {{-- Officers Table: Cariche Attive --}}
             @if($company->officers->count() > 0)
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
@@ -331,14 +331,14 @@
                             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nome</th>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ruolo</th>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Data Nomina</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Data Scadenza</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Scadenza</th>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Stato</th>
                             <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Azioni</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @foreach($company->officers as $officer)
-                        <tr class="hover:bg-gray-50">
+                        <tr class="hover:bg-gray-50" x-data="{ showCease: false }">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($officer->member)
                                 <a href="{{ route('members.show', $officer->member) }}" class="text-sm font-medium text-brand-600 hover:text-brand-700">{{ $officer->full_name }}</a>
@@ -351,9 +351,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $officer->data_nomina ? $officer->data_nomina->format('d/m/Y') : '-' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $officer->data_scadenza ? $officer->data_scadenza->format('d/m/Y') : '-' }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                @if($officer->data_cessazione)
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">Cessato</span>
-                                @elseif($officer->is_expired)
+                                @if($officer->is_expired)
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">Scaduto</span>
                                 @elseif($officer->is_expiring)
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">In Scadenza</span>
@@ -363,13 +361,33 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right">
                                 @if(auth()->user()->hasPermission('companies.edit'))
-                                <form method="POST" action="{{ route('officers.destroy', $officer) }}" class="inline" onsubmit="return confirm('Eliminare questa carica?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-500 hover:text-red-700 text-sm" title="Elimina">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                <div class="flex items-center justify-end gap-2">
+                                    {{-- Pulsante Cessa --}}
+                                    <button @click="showCease = !showCease" class="inline-flex items-center gap-1 text-xs text-amber-600 hover:text-amber-800 border border-amber-200 hover:border-amber-400 rounded px-2 py-1 transition" title="Segna come cessata">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        Cessa
                                     </button>
-                                </form>
+                                    {{-- Elimina --}}
+                                    <form method="POST" action="{{ route('officers.destroy', $officer) }}" class="inline" onsubmit="return confirm('Eliminare definitivamente questa carica?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-400 hover:text-red-600 transition" title="Elimina">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                                {{-- Form Cessazione --}}
+                                <div x-show="showCease" x-transition class="mt-2 text-left">
+                                    <form method="POST" action="{{ route('officers.cease', $officer) }}" class="flex items-center gap-2">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="date" name="data_cessazione" value="{{ now()->format('Y-m-d') }}"
+                                               min="{{ $officer->data_nomina->format('Y-m-d') }}"
+                                               class="form-input text-xs py-1 px-2 w-36" required>
+                                        <button type="submit" class="text-xs bg-amber-500 hover:bg-amber-600 text-white rounded px-2 py-1 transition">Conferma</button>
+                                        <button type="button" @click="showCease = false" class="text-xs text-gray-500 hover:text-gray-700">✕</button>
+                                    </form>
+                                </div>
                                 @endif
                             </td>
                         </tr>
@@ -380,8 +398,55 @@
             @else
             <div class="px-6 py-12 text-center">
                 <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                <h4 class="mt-3 text-sm font-medium text-gray-900">Nessuna carica registrata</h4>
+                <h4 class="mt-3 text-sm font-medium text-gray-900">Nessuna carica attiva</h4>
                 <p class="mt-1 text-xs text-gray-500">Aggiungi la prima carica societaria utilizzando il pulsante sopra.</p>
+            </div>
+            @endif
+
+            {{-- Storico Cariche Cessate --}}
+            @if($ceasedOfficers->count() > 0)
+            <div class="border-t border-gray-200">
+                <div x-data="{ open: false }">
+                    <button @click="open = !open" class="w-full flex items-center justify-between px-6 py-3 text-left hover:bg-gray-50 transition">
+                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Storico Cariche Cessate ({{ $ceasedOfficers->count() }})
+                        </span>
+                        <svg class="w-4 h-4 text-gray-400 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" x-transition class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-100">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Nome</th>
+                                    <th class="px-6 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ruolo</th>
+                                    <th class="px-6 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Nomina</th>
+                                    <th class="px-6 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Cessazione</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                @foreach($ceasedOfficers as $officer)
+                                <tr class="opacity-60">
+                                    <td class="px-6 py-3 whitespace-nowrap">
+                                        @if($officer->member)
+                                        <a href="{{ route('members.show', $officer->member) }}" class="text-sm text-brand-600 hover:text-brand-700">{{ $officer->full_name }}</a>
+                                        @else
+                                        <span class="text-sm text-gray-700">{{ $officer->full_name }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-500">{{ $officer->ruolo }}</td>
+                                    <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-500">{{ $officer->data_nomina?->format('d/m/Y') ?? '-' }}</td>
+                                    <td class="px-6 py-3 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">
+                                            Cessato il {{ $officer->data_cessazione->format('d/m/Y') }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
             @endif
         </div>
@@ -467,7 +532,7 @@
             {{-- Shareholders Table --}}
             @if($company->shareholders->count() > 0)
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table class="min-w-full">
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nome</th>
@@ -479,9 +544,13 @@
                             <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Azioni</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach($company->shareholders as $shareholder)
-                        <tr class="hover:bg-gray-50">
+
+                    @foreach($company->shareholders as $shareholder)
+                    {{-- Ogni socio ha il proprio tbody con stato Alpine --}}
+                    <tbody x-data="{ editing: false }" class="divide-y divide-gray-200 border-t border-gray-200">
+
+                        {{-- Riga visualizzazione --}}
+                        <tr class="hover:bg-gray-50" :class="editing ? 'bg-blue-50' : ''">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">{{ $shareholder->nome }}</div>
                                 @if($shareholder->codice_fiscale)
@@ -514,18 +583,84 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right">
                                 @if(auth()->user()->hasPermission('companies.edit'))
-                                <form method="POST" action="{{ route('shareholders.destroy', $shareholder) }}" class="inline" onsubmit="return confirm('Eliminare questo socio?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-500 hover:text-red-700 text-sm" title="Elimina">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                <div class="flex items-center justify-end gap-2">
+                                    <button @click="editing = !editing"
+                                            :class="editing ? 'bg-blue-100 text-blue-700 border-blue-300' : 'text-gray-500 hover:text-brand-600 border-gray-200 hover:border-brand-300'"
+                                            class="inline-flex items-center gap-1 text-xs border rounded px-2 py-1 transition" title="Modifica">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        <span x-text="editing ? 'Chiudi' : 'Modifica'"></span>
                                     </button>
-                                </form>
+                                    <form method="POST" action="{{ route('shareholders.destroy', $shareholder) }}" class="inline" onsubmit="return confirm('Eliminare questo socio?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-400 hover:text-red-600 transition" title="Elimina">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
                                 @endif
                             </td>
                         </tr>
-                        @endforeach
+
+                        {{-- Riga form modifica (inline, collassabile) --}}
+                        @if(auth()->user()->hasPermission('companies.edit'))
+                        <tr x-show="editing" x-transition>
+                            <td colspan="7" class="px-6 py-4 bg-blue-50 border-t border-blue-100">
+                                <form method="POST" action="{{ route('shareholders.update', $shareholder) }}">
+                                    @csrf
+                                    @method('PUT')
+                                    <p class="text-xs font-semibold text-blue-700 mb-3 uppercase tracking-wide">Modifica socio</p>
+                                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Nome / Ragione Sociale *</label>
+                                            <input type="text" name="nome" value="{{ $shareholder->nome }}" required class="form-input w-full text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Tipo *</label>
+                                            <select name="tipo" required class="form-select w-full text-sm">
+                                                <option value="persona_fisica" {{ $shareholder->tipo === 'persona_fisica' ? 'selected' : '' }}>Persona Fisica</option>
+                                                <option value="persona_giuridica" {{ $shareholder->tipo === 'persona_giuridica' ? 'selected' : '' }}>Persona Giuridica</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Codice Fiscale</label>
+                                            <input type="text" name="codice_fiscale" value="{{ $shareholder->codice_fiscale }}" class="form-input w-full text-sm" maxlength="16">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Quota % *</label>
+                                            <input type="number" name="quota_percentuale" value="{{ $shareholder->quota_percentuale }}" required step="0.01" min="0" max="100" class="form-input w-full text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Quota Valore (EUR)</label>
+                                            <input type="number" name="quota_valore" value="{{ $shareholder->quota_valore }}" step="0.01" min="0" class="form-input w-full text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Data Ingresso *</label>
+                                            <input type="date" name="data_ingresso" value="{{ $shareholder->data_ingresso?->format('Y-m-d') }}" required class="form-input w-full text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Diritti di Voto (%)</label>
+                                            <input type="number" name="diritti_voto" value="{{ $shareholder->diritti_voto }}" step="0.01" min="0" max="100" class="form-input w-full text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">Note</label>
+                                            <input type="text" name="note" value="{{ $shareholder->note }}" class="form-input w-full text-sm">
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3 mt-3">
+                                        <button type="submit" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-medium px-3 py-1.5 rounded-lg transition text-sm">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                            Salva modifiche
+                                        </button>
+                                        <button type="button" @click="editing = false" class="text-sm text-gray-500 hover:text-gray-700">Annulla</button>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                        @endif
+
                     </tbody>
+                    @endforeach
                 </table>
             </div>
             @else
@@ -606,88 +741,226 @@
     {{-- ============================================================ --}}
     {{-- TAB: Relazioni --}}
     {{-- ============================================================ --}}
-    <div x-show="activeTab === 'relazioni'" x-transition>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {{-- Societa Controllate (child relationships) --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-base font-semibold text-gray-900">Societa Controllate</h3>
-                    <p class="text-xs text-gray-500 mt-0.5">Societa in cui {{ $company->denominazione }} detiene una partecipazione</p>
-                </div>
-                @if($company->childRelationships->count() > 0)
-                <div class="divide-y divide-gray-200">
-                    @foreach($company->childRelationships as $relation)
-                    <div class="px-6 py-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <a href="{{ route('companies.show', $relation->childCompany) }}" class="text-sm font-medium text-brand-600 hover:text-brand-700">
-                                    {{ $relation->childCompany->denominazione }}
-                                </a>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
-                                        {{ $relation->relationship_type }}
-                                    </span>
-                                    @if($relation->data_inizio)
-                                    <span class="text-xs text-gray-500">dal {{ $relation->data_inizio->format('d/m/Y') }}</span>
-                                    @endif
-                                </div>
-                            </div>
-                            @if($relation->quota_percentuale)
-                            <div class="text-right">
-                                <span class="text-lg font-bold text-gray-900">{{ number_format((float)$relation->quota_percentuale, 2, ',', '.') }}%</span>
-                                <p class="text-xs text-gray-500">partecipazione</p>
-                            </div>
-                            @endif
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-                @else
-                <div class="px-6 py-8 text-center">
-                    <p class="text-sm text-gray-500">Nessuna societa controllata</p>
-                </div>
-                @endif
-            </div>
+    <div x-show="activeTab === 'relazioni'" x-transition x-data="{ showAddRelation: false }">
+        <div class="space-y-6">
 
-            {{-- Societa Controllanti (parent relationships) --}}
+            {{-- Aggiungi relazione (admin/edit only) --}}
+            @if(auth()->user()->hasPermission('companies.edit'))
             <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-base font-semibold text-gray-900">Societa Controllanti</h3>
-                    <p class="text-xs text-gray-500 mt-0.5">Societa che detengono una partecipazione in {{ $company->denominazione }}</p>
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-base font-semibold text-gray-900">Aggiungi Relazione</h3>
+                    <button @click="showAddRelation = !showAddRelation"
+                            class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-medium px-3 py-1.5 rounded-lg transition text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Nuova Relazione
+                    </button>
                 </div>
-                @if($company->parentRelationships->count() > 0)
-                <div class="divide-y divide-gray-200">
-                    @foreach($company->parentRelationships as $relation)
-                    <div class="px-6 py-4">
-                        <div class="flex items-center justify-between">
+                <div x-show="showAddRelation" x-transition class="px-6 py-5 bg-gray-50">
+                    <form method="POST" action="{{ route('companies.relationships.store', $company) }}">
+                        @csrf
+                        <p class="text-xs text-gray-500 mb-4">
+                            Stai registrando una partecipazione di <strong>{{ $company->denominazione }}</strong> in un'altra società.
+                        </p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Società Controllata *</label>
+                                <select name="child_company_id" required class="form-select w-full text-sm">
+                                    <option value="">Seleziona società...</option>
+                                    @foreach($otherCompanies as $c)
+                                    <option value="{{ $c->id }}" {{ old('child_company_id') == $c->id ? 'selected' : '' }}>
+                                        {{ $c->denominazione }}
+                                    </option>
+                                    @endforeach
+                                </select>
+                                @error('child_company_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                            </div>
                             <div>
-                                <a href="{{ route('companies.show', $relation->parentCompany) }}" class="text-sm font-medium text-brand-600 hover:text-brand-700">
-                                    {{ $relation->parentCompany->denominazione }}
-                                </a>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
-                                        {{ $relation->relationship_type }}
-                                    </span>
-                                    @if($relation->data_inizio)
-                                    <span class="text-xs text-gray-500">dal {{ $relation->data_inizio->format('d/m/Y') }}</span>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Tipo Relazione *</label>
+                                <select name="relationship_type" required class="form-select w-full text-sm">
+                                    <option value="">Seleziona tipo...</option>
+                                    <option value="Partecipazione" {{ old('relationship_type') === 'Partecipazione' ? 'selected' : '' }}>Partecipazione</option>
+                                    <option value="Controllo" {{ old('relationship_type') === 'Controllo' ? 'selected' : '' }}>Controllo</option>
+                                    <option value="Collegata" {{ old('relationship_type') === 'Collegata' ? 'selected' : '' }}>Collegata</option>
+                                    <option value="Controllata" {{ old('relationship_type') === 'Controllata' ? 'selected' : '' }}>Controllata</option>
+                                    <option value="Joint Venture" {{ old('relationship_type') === 'Joint Venture' ? 'selected' : '' }}>Joint Venture</option>
+                                </select>
+                                @error('relationship_type') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Quota Partecipazione (%)</label>
+                                <input type="number" name="quota_percentuale" value="{{ old('quota_percentuale') }}"
+                                       step="0.01" min="0" max="100" class="form-input w-full text-sm" placeholder="0,00">
+                                @error('quota_percentuale') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Data Inizio</label>
+                                <input type="date" name="data_inizio" value="{{ old('data_inizio') }}" class="form-input w-full text-sm">
+                                @error('data_inizio') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Data Fine</label>
+                                <input type="date" name="data_fine" value="{{ old('data_fine') }}" class="form-input w-full text-sm">
+                                @error('data_fine') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div class="sm:col-span-2 lg:col-span-3">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Note</label>
+                                <input type="text" name="note" value="{{ old('note') }}" class="form-input w-full text-sm" placeholder="Eventuali note sulla relazione...">
+                                @error('note') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 mt-4">
+                            <button type="submit" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-medium px-4 py-2 rounded-lg transition text-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                Salva Relazione
+                            </button>
+                            <button type="button" @click="showAddRelation = false" class="text-sm text-gray-500 hover:text-gray-700">Annulla</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            @endif
+
+            {{-- Griglia: Controllate + Controllanti --}}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                {{-- Societa Controllate (child relationships) --}}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                            <h3 class="text-base font-semibold text-gray-900">Societa Controllate</h3>
+                            @if($company->childRelationships->count() > 0)
+                            <span class="ml-auto inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                {{ $company->childRelationships->count() }}
+                            </span>
+                            @endif
+                        </div>
+                        <p class="text-xs text-gray-500 mt-0.5">Societa in cui {{ $company->denominazione }} detiene una partecipazione</p>
+                    </div>
+                    @if($company->childRelationships->count() > 0)
+                    <div class="divide-y divide-gray-200">
+                        @foreach($company->childRelationships as $relation)
+                        <div class="px-6 py-4">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="min-w-0">
+                                    <a href="{{ route('companies.show', $relation->childCompany) }}"
+                                       class="text-sm font-medium text-brand-600 hover:text-brand-700 truncate block">
+                                        {{ $relation->childCompany->denominazione }}
+                                    </a>
+                                    <div class="flex flex-wrap items-center gap-2 mt-1.5">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                                            {{ $relation->relationship_type }}
+                                        </span>
+                                        @if($relation->data_inizio)
+                                        <span class="text-xs text-gray-500">dal {{ $relation->data_inizio->format('d/m/Y') }}</span>
+                                        @endif
+                                        @if($relation->data_fine)
+                                        <span class="text-xs text-gray-500">al {{ $relation->data_fine->format('d/m/Y') }}</span>
+                                        @endif
+                                    </div>
+                                    @if($relation->note)
+                                    <p class="text-xs text-gray-500 mt-1 italic">{{ $relation->note }}</p>
+                                    @endif
+                                </div>
+                                <div class="flex items-center gap-3 flex-shrink-0">
+                                    @if($relation->quota_percentuale)
+                                    <div class="text-right">
+                                        <span class="text-base font-bold text-gray-900">{{ number_format((float)$relation->quota_percentuale, 2, ',', '.') }}%</span>
+                                        <p class="text-xs text-gray-400">partecip.</p>
+                                    </div>
+                                    @endif
+                                    @if(auth()->user()->hasPermission('companies.edit'))
+                                    <form method="POST" action="{{ route('relationships.destroy', $relation) }}"
+                                          onsubmit="return confirm('Eliminare questa relazione?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-400 hover:text-red-600 transition" title="Elimina">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                            </svg>
+                                        </button>
+                                    </form>
                                     @endif
                                 </div>
                             </div>
-                            @if($relation->quota_percentuale)
-                            <div class="text-right">
-                                <span class="text-lg font-bold text-gray-900">{{ number_format((float)$relation->quota_percentuale, 2, ',', '.') }}%</span>
-                                <p class="text-xs text-gray-500">partecipazione</p>
-                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @else
+                    <div class="px-6 py-10 text-center">
+                        <svg class="mx-auto h-10 w-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                        <p class="mt-2 text-sm text-gray-500">Nessuna societa controllata</p>
+                        @if(auth()->user()->hasPermission('companies.edit'))
+                        <p class="text-xs text-gray-400 mt-1">Usa il pulsante "Nuova Relazione" per aggiungerne una.</p>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+
+                {{-- Societa Controllanti (parent relationships) --}}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full bg-purple-500"></div>
+                            <h3 class="text-base font-semibold text-gray-900">Societa Controllanti</h3>
+                            @if($company->parentRelationships->count() > 0)
+                            <span class="ml-auto inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                {{ $company->parentRelationships->count() }}
+                            </span>
                             @endif
                         </div>
+                        <p class="text-xs text-gray-500 mt-0.5">Societa che detengono una partecipazione in {{ $company->denominazione }}</p>
                     </div>
-                    @endforeach
+                    @if($company->parentRelationships->count() > 0)
+                    <div class="divide-y divide-gray-200">
+                        @foreach($company->parentRelationships as $relation)
+                        <div class="px-6 py-4">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="min-w-0">
+                                    <a href="{{ route('companies.show', $relation->parentCompany) }}"
+                                       class="text-sm font-medium text-brand-600 hover:text-brand-700 truncate block">
+                                        {{ $relation->parentCompany->denominazione }}
+                                    </a>
+                                    <div class="flex flex-wrap items-center gap-2 mt-1.5">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+                                            {{ $relation->relationship_type }}
+                                        </span>
+                                        @if($relation->data_inizio)
+                                        <span class="text-xs text-gray-500">dal {{ $relation->data_inizio->format('d/m/Y') }}</span>
+                                        @endif
+                                        @if($relation->data_fine)
+                                        <span class="text-xs text-gray-500">al {{ $relation->data_fine->format('d/m/Y') }}</span>
+                                        @endif
+                                    </div>
+                                    @if($relation->note)
+                                    <p class="text-xs text-gray-500 mt-1 italic">{{ $relation->note }}</p>
+                                    @endif
+                                </div>
+                                @if($relation->quota_percentuale)
+                                <div class="text-right flex-shrink-0">
+                                    <span class="text-base font-bold text-gray-900">{{ number_format((float)$relation->quota_percentuale, 2, ',', '.') }}%</span>
+                                    <p class="text-xs text-gray-400">partecip.</p>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @else
+                    <div class="px-6 py-10 text-center">
+                        <svg class="mx-auto h-10 w-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                        <p class="mt-2 text-sm text-gray-500">Nessuna societa controllante</p>
+                        <p class="text-xs text-gray-400 mt-1">Le relazioni controllanti vengono generate automaticamente quando un'altra societa aggiunge questa come controllata.</p>
+                    </div>
+                    @endif
                 </div>
-                @else
-                <div class="px-6 py-8 text-center">
-                    <p class="text-sm text-gray-500">Nessuna societa controllante</p>
-                </div>
-                @endif
+
             </div>
         </div>
     </div>

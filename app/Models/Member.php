@@ -69,6 +69,21 @@ class Member extends Model
         return $query->where('is_active', true);
     }
 
+    public function scopeForUser($query, User $user)
+    {
+        if ($user->isAdmin()) {
+            return $query;
+        }
+
+        $ids = $user->accessibleCompanyIds();
+
+        if (empty($ids)) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        return $query->whereHas('officers', fn ($q) => $q->whereIn('company_id', $ids));
+    }
+
     public function scopeSearch($query, ?string $term)
     {
         if (empty($term)) {

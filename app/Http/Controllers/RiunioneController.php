@@ -50,7 +50,7 @@ class RiunioneController extends Controller
         }
 
         $riunioni  = $query->paginate(20)->withQueryString();
-        $companies = Company::active()->orderBy('denominazione')->get();
+        $companies = Company::active()->forUser(auth()->user()->load('companies'))->orderBy('denominazione')->get();
 
         $anni = Riunione::selectRaw('YEAR(data_ora) as anno')
             ->groupBy('anno')
@@ -73,7 +73,7 @@ class RiunioneController extends Controller
 
     public function create(): View
     {
-        $companies = Company::active()->orderBy('denominazione')->get();
+        $companies = Company::active()->forUser(auth()->user()->load('companies'))->orderBy('denominazione')->get();
         return view('libri-sociali.create', compact('companies'));
     }
 
@@ -124,7 +124,7 @@ class RiunioneController extends Controller
 
     public function edit(Riunione $riunione): View
     {
-        $companies = Company::active()->orderBy('denominazione')->get();
+        $companies = Company::active()->forUser(auth()->user()->load('companies'))->orderBy('denominazione')->get();
         return view('libri-sociali.edit', compact('riunione', 'companies'));
     }
 

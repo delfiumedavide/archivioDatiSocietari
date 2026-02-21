@@ -13,14 +13,26 @@ class DashboardController extends Controller
 
     public function index(): View
     {
-        return view('dashboard.index', [
-            'stats' => $this->dashboardService->getSummaryStats(),
-            'expirationData' => $this->dashboardService->getExpirationData(),
-            'documentsByCategory' => $this->dashboardService->getDocumentsByCategory(),
-            'documentsByCompany' => $this->dashboardService->getDocumentsByCompany(),
-            'uploadActivity' => $this->dashboardService->getUploadActivity(),
-            'recentActivity' => $this->dashboardService->getRecentActivity(),
-            'expiringDocuments' => $this->dashboardService->getExpiringDocumentsList(),
-        ]);
+        $user       = auth()->user()->load('companies');
+        $companyIds = $user->accessibleCompanyIds(); // null = admin, array = restricted
+
+        $data = [
+            'stats'               => $this->dashboardService->getSummaryStats($companyIds),
+            'expirationData'      => $this->dashboardService->getExpirationData($companyIds),
+            'documentsByCategory' => $this->dashboardService->getDocumentsByCategory($companyIds),
+            'documentsByCompany'  => $this->dashboardService->getDocumentsByCompany($companyIds),
+            'uploadActivity'      => $this->dashboardService->getUploadActivity(12, $companyIds),
+            'recentActivity'      => $this->dashboardService->getRecentActivity(10),
+            'expiringDocuments'   => $this->dashboardService->getExpiringDocumentsList(20, $companyIds),
+        ];
+
+        if ($user->isAdmin()) {
+            $data['riunioniStats']    = $this->dashboardService->getRiunioniStats();
+            $data['prossimeRiunioni'] = $this->dashboardService->getProssimeRiunioni();
+            $data['missingVerbali']   = $this->dashboardService->getMissingVerbali();
+            $data['declarationStats'] = $this->dashboardService->getDeclarationStats();
+        }
+
+        return view('dashboard.index', $data);
     }
 }

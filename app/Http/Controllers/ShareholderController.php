@@ -12,6 +12,8 @@ class ShareholderController extends Controller
 {
     public function store(Request $request, Company $company): RedirectResponse
     {
+        abort_unless($request->user()->load('companies')->canAccessCompany($company), 403);
+
         $validated = $request->validate([
             'tipo' => ['required', 'in:persona_fisica,persona_giuridica'],
             'nome' => ['required', 'string', 'max:255'],
@@ -43,6 +45,8 @@ class ShareholderController extends Controller
 
     public function update(Request $request, Shareholder $shareholder): RedirectResponse
     {
+        abort_unless($request->user()->load('companies')->canAccessCompany($shareholder->company_id), 403);
+
         $validated = $request->validate([
             'tipo' => ['required', 'in:persona_fisica,persona_giuridica'],
             'nome' => ['required', 'string', 'max:255'],
@@ -63,6 +67,8 @@ class ShareholderController extends Controller
 
     public function destroy(Request $request, Shareholder $shareholder): RedirectResponse
     {
+        abort_unless($request->user()->load('companies')->canAccessCompany($shareholder->company_id), 403);
+
         $companyId = $shareholder->company_id;
         $shareholder->delete();
 

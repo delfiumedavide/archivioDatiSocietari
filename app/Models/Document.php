@@ -150,6 +150,28 @@ class Document extends Model
         return $query->where('member_id', $memberId);
     }
 
+    public function scopeForUser($query, User $user)
+    {
+        if ($user->isAdmin()) {
+            return $query;
+        }
+
+        $ids = $user->accessibleCompanyIds();
+
+        if (empty($ids)) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        return $query->where(function ($q) use ($ids) {
+            $q->whereIn('company_id', $ids)
+              ->orWhere(function ($q2) use ($ids) {
+                  // Documenti di membri senza company_id diretto
+                  $q2->whereNull('company_id')
+                     ->whereHas('member.officers', fn ($q3) => $q3->whereIn('company_id', $ids));
+              });
+        });
+    }
+
     public function getOwnerNameAttribute(): string
     {
         if ($this->company_id) {

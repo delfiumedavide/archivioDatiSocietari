@@ -18,7 +18,7 @@ class AdminUserSeeder extends Seeder
             ['email' => 'admin@gruppodimartino.it'],
             [
                 'name' => 'Amministratore',
-                'password' => Hash::make(env('ADMIN_DEFAULT_PASSWORD', 'Admin@2024!Secure')),
+                'password' => Hash::make(env('ADMIN_DEFAULT_PASSWORD') ?? abort(500, 'ADMIN_DEFAULT_PASSWORD non impostata nel file .env')),
                 'email_verified_at' => now(),
                 'is_active' => true,
             ]

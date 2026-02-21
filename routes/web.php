@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanyOfficerController;
+use App\Http\Controllers\CompanyRelationshipController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliberaController;
 use App\Http\Controllers\DocumentController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RiunioneController;
 use App\Http\Controllers\ShareholderController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +34,11 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::post('/logout', [LogoutController::class, 'logout'])->name('logout');
 
+    // Profile
+    Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+
     // Dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -42,12 +49,17 @@ Route::middleware(['auth'])->group(function () {
         // Nested: Officers
         Route::post('companies/{company}/officers', [CompanyOfficerController::class, 'store'])->name('companies.officers.store');
         Route::put('officers/{officer}', [CompanyOfficerController::class, 'update'])->name('officers.update');
+        Route::patch('officers/{officer}/cease', [CompanyOfficerController::class, 'cease'])->name('officers.cease');
         Route::delete('officers/{officer}', [CompanyOfficerController::class, 'destroy'])->name('officers.destroy');
 
         // Nested: Shareholders
         Route::post('companies/{company}/shareholders', [ShareholderController::class, 'store'])->name('companies.shareholders.store');
         Route::put('shareholders/{shareholder}', [ShareholderController::class, 'update'])->name('shareholders.update');
         Route::delete('shareholders/{shareholder}', [ShareholderController::class, 'destroy'])->name('shareholders.destroy');
+
+        // Nested: Relationships
+        Route::post('companies/{company}/relationships', [CompanyRelationshipController::class, 'store'])->name('companies.relationships.store');
+        Route::delete('relationships/{relationship}', [CompanyRelationshipController::class, 'destroy'])->name('relationships.destroy');
     });
 
     // Members

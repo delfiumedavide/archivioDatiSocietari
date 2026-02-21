@@ -63,9 +63,25 @@ class Company extends Model
         return $this->hasMany(CompanyRelationship::class, 'parent_company_id');
     }
 
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class)->withTimestamps();
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    public function scopeForUser($query, User $user)
+    {
+        if ($user->isAdmin()) {
+            return $query;
+        }
+
+        $ids = $user->accessibleCompanyIds();
+
+        return empty($ids) ? $query->whereRaw('0 = 1') : $query->whereIn('id', $ids);
     }
 
     public function scopeSearch($query, ?string $term)

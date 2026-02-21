@@ -82,6 +82,31 @@
             </div>
         </div>
 
+        {{-- Accesso Società --}}
+        <div class="card">
+            <div class="card-header">
+                <h2 class="text-lg font-semibold">Accesso Società</h2>
+                <p class="text-sm text-gray-500 mt-0.5">Le società selezionate saranno l'unico dato visibile all'utente. Gli amministratori vedono tutto automaticamente.</p>
+            </div>
+            <div class="card-body">
+                @if($companies->isEmpty())
+                    <p class="text-sm text-gray-400 italic">Nessuna società attiva presente.</p>
+                @else
+                    @php $selectedIds = old('company_ids', $assignedIds); @endphp
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-1">
+                        @foreach($companies as $c)
+                        <label class="flex items-center gap-2 p-2 rounded hover:bg-gray-50 cursor-pointer">
+                            <input type="checkbox" name="company_ids[]" value="{{ $c->id }}"
+                                class="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                {{ in_array($c->id, $selectedIds) ? 'checked' : '' }}>
+                            <span class="text-sm text-gray-700">{{ $c->denominazione }}</span>
+                        </label>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </div>
+
         <div class="flex justify-end gap-4">
             <a href="{{ route('users.index') }}" class="btn-secondary">Annulla</a>
             <button type="submit" class="btn-primary">Salva Modifiche</button>

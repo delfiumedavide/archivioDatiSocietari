@@ -22,6 +22,7 @@
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Utente</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Ruolo</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Societa</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Stato</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Ultimo Accesso</th>
                         <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Azioni</th>
@@ -43,6 +44,20 @@
                             @foreach($user->roles as $role)
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $role->name === 'admin' ? 'bg-red-100 text-red-800' : ($role->name === 'manager' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800') }}">{{ $role->label }}</span>
                             @endforeach
+                        </td>
+                        <td class="px-6 py-4">
+                            @if($user->isAdmin())
+                                <span class="text-xs text-gray-400 italic">Tutte</span>
+                            @elseif($user->companies->isEmpty())
+                                <span class="text-xs text-gray-400 italic">Nessuna</span>
+                            @else
+                                @foreach($user->companies->take(2) as $c)
+                                    <span class="inline-block text-xs bg-brand-50 text-brand-700 border border-brand-200 rounded px-1.5 py-0.5 mr-1 mb-1">{{ $c->denominazione }}</span>
+                                @endforeach
+                                @if($user->companies->count() > 2)
+                                    <span class="text-xs text-gray-500">+{{ $user->companies->count() - 2 }} altre</span>
+                                @endif
+                            @endif
                         </td>
                         <td class="px-6 py-4">
                             <span class="{{ $user->is_active ? 'badge-green' : 'badge-red' }}">{{ $user->is_active ? 'Attivo' : 'Disattivato' }}</span>

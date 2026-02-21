@@ -47,6 +47,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Permission::class);
     }
 
+    public function companies(): BelongsToMany
+    {
+        return $this->belongsToMany(Company::class)->withTimestamps();
+    }
+
     public function activityLogs(): HasMany
     {
         return $this->hasMany(ActivityLog::class);
@@ -95,6 +100,32 @@ class User extends Authenticatable
         return $this->permissions
             ->where('section', $section)
             ->isNotEmpty();
+    }
+
+    /**
+     * Restituisce null per admin (nessuna restrizione),
+     * oppure l'array di company_id assegnate all'utente.
+     * Chiamare $user->load('companies') prima per evitare N+1.
+     */
+    public function accessibleCompanyIds(): ?array
+    {
+        if ($this->isAdmin()) {
+            return null;
+        }
+
+        return $this->companies->pluck('id')->all();
+    }
+
+    public function canAccessCompany(Company|int $company): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        $id = $company instanceof Company ? $company->id : $company;
+        $ids = $this->accessibleCompanyIds();
+
+        return $ids !== null && in_array($id, $ids);
     }
 
     public function scopeActive($query)

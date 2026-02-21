@@ -116,11 +116,11 @@
             {{-- User info --}}
             <div class="border-t border-brand-800 px-4 py-3">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-gold-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                    <a href="{{ route('profile.edit') }}" class="w-8 h-8 bg-gold-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 hover:bg-gold-400 transition" title="Il mio profilo">
                         {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                    </div>
+                    </a>
                     <div class="min-w-0 flex-1">
-                        <p class="text-sm font-medium text-white truncate">{{ auth()->user()->name }}</p>
+                        <a href="{{ route('profile.edit') }}" class="text-sm font-medium text-white truncate block hover:text-gold-300 transition">{{ auth()->user()->name }}</a>
                         <p class="text-xs text-brand-400 truncate">{{ auth()->user()->roles->first()?->label ?? 'Utente' }}</p>
                     </div>
                     <form method="POST" action="{{ route('logout') }}">

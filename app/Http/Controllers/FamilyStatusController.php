@@ -22,9 +22,12 @@ class FamilyStatusController extends Controller
 
     public function index(Request $request): View
     {
+        $user = $request->user()->load('companies');
+
         $members = Member::with([
                 'familyStatusChanges' => fn ($q) => $q->orderByDesc('data_variazione')->limit(1),
             ])
+            ->forUser($user)
             ->withCount(['familyMembers' => fn ($q) => $q->active()])
             ->when($request->input('search'), fn ($q, $v) => $q->search($v))
             ->when($request->input('stato_civile'), function ($q, $stato) {
@@ -41,8 +44,15 @@ class FamilyStatusController extends Controller
         return view('family-status.index', compact('members'));
     }
 
-    public function show(Member $member): View
+    public function show(Request $request, Member $member): View
     {
+        $user = $request->user()->load('companies');
+
+        abort_unless(
+            $user->isAdmin() || Member::forUser($user)->where('id', $member->id)->exists(),
+            403
+        );
+
         $member->load([
             'familyStatusChanges' => fn ($q) => $q->with('registeredBy')->orderByDesc('data_variazione'),
             'familyMembers',
@@ -62,8 +72,10 @@ class FamilyStatusController extends Controller
         $year = (int) $request->input('anno', date('Y'));
         $filterSigned = $request->input('firma');
         $search = $request->input('search');
+        $user = $request->user()->load('companies');
 
         $membersQuery = Member::active()
+            ->forUser($user)
             ->when($search, fn ($q, $v) => $q->search($v))
             ->orderBy('cognome')
             ->orderBy('nome');
@@ -168,7 +180,8 @@ class FamilyStatusController extends Controller
     public function bulkGenerate(Request $request): RedirectResponse
     {
         $year = (int) $request->input('anno', date('Y'));
-        $members = Member::active()->get();
+        $user = $request->user()->load('companies');
+        $members = Member::active()->forUser($user)->get();
         $count = 0;
 
         foreach ($members as $member) {

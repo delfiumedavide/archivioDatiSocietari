@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Models\Company;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -15,7 +16,7 @@ class UserController extends Controller
 {
     public function index(): View
     {
-        $users = User::with('roles')
+        $users = User::with(['roles', 'companies'])
             ->orderBy('name')
             ->paginate(20);
 
@@ -26,16 +27,17 @@ class UserController extends Controller
     {
         $roles = Role::all();
         $permissions = Permission::orderBy('section')->orderBy('name')->get()->groupBy('section');
+        $companies = Company::active()->orderBy('denominazione')->get();
 
-        return view('users.create', compact('roles', 'permissions'));
+        return view('users.create', compact('roles', 'permissions', 'companies'));
     }
 
     public function store(StoreUserRequest $request): RedirectResponse
     {
         $user = User::create([
-            'name' => $request->input('name'),
-            'email' => $request->input('email'),
-            'password' => $request->input('password'),
+            'name'      => $request->input('name'),
+            'email'     => $request->input('email'),
+            'password'  => $request->input('password'),
             'is_active' => $request->boolean('is_active', true),
         ]);
 
@@ -45,24 +47,28 @@ class UserController extends Controller
             $user->permissions()->sync($request->input('permissions'));
         }
 
+        $user->companies()->sync($request->input('company_ids', []));
+
         return redirect()->route('users.index')
             ->with('success', 'Utente creato con successo.');
     }
 
     public function edit(User $user): View
     {
-        $user->load(['roles', 'permissions']);
+        $user->load(['roles', 'permissions', 'companies']);
         $roles = Role::all();
         $permissions = Permission::orderBy('section')->orderBy('name')->get()->groupBy('section');
+        $companies = Company::active()->orderBy('denominazione')->get();
+        $assignedIds = $user->companies->pluck('id')->toArray();
 
-        return view('users.edit', compact('user', 'roles', 'permissions'));
+        return view('users.edit', compact('user', 'roles', 'permissions', 'companies', 'assignedIds'));
     }
 
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
         $data = [
-            'name' => $request->input('name'),
-            'email' => $request->input('email'),
+            'name'      => $request->input('name'),
+            'email'     => $request->input('email'),
             'is_active' => $request->boolean('is_active', true),
         ];
 
@@ -73,6 +79,7 @@ class UserController extends Controller
         $user->update($data);
         $user->roles()->sync([$request->input('role_id')]);
         $user->permissions()->sync($request->input('permissions', []));
+        $user->companies()->sync($request->input('company_ids', []));
 
         return redirect()->route('users.index')
             ->with('success', 'Utente aggiornato con successo.');
