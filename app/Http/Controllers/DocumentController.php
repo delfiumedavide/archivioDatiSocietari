@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreDocumentRequest;
 use App\Models\ActivityLog;
 use App\Models\Company;
+use App\Models\CompanyOfficer;
 use App\Models\Document;
 use App\Models\DocumentCategory;
 use App\Models\Member;
@@ -182,7 +183,9 @@ class DocumentController extends Controller
     public function expiring(Request $request): View
     {
         $user = $request->user()->load('companies');
+        $companyIds = $user->accessibleCompanyIds(); // null = admin, [] = nessuna, [1,2] = filtrato
 
+        // Documenti
         $expiring = Document::with(['company', 'member', 'category'])
             ->forUser($user)
             ->expiring()
@@ -195,7 +198,46 @@ class DocumentController extends Controller
             ->orderBy('expiration_date')
             ->get();
 
-        return view('documents.expiring', compact('expiring', 'expired'));
+        // Cariche societarie (non cessate, con data_scadenza impostata)
+        $officersBase = CompanyOfficer::with(['company', 'member'])
+            ->whereNull('data_cessazione')
+            ->whereNotNull('data_scadenza')
+            ->when($companyIds !== null, fn ($q) => $q->whereIn('company_id', $companyIds));
+
+        $expiringOfficers = (clone $officersBase)
+            ->where('data_scadenza', '>=', now())
+            ->where('data_scadenza', '<=', now()->addDays(90))
+            ->orderBy('data_scadenza')
+            ->get();
+
+        $expiredOfficers = (clone $officersBase)
+            ->where('data_scadenza', '<', now())
+            ->orderByDesc('data_scadenza')
+            ->get();
+
+        // White list membri
+        $wlBase = Member::where('white_list', true)
+            ->whereNotNull('white_list_scadenza')
+            ->when($companyIds !== null, fn ($q) => $q->whereHas(
+                'officers', fn ($q2) => $q2->whereIn('company_id', $companyIds)
+            ));
+
+        $expiringWhiteList = (clone $wlBase)
+            ->where('white_list_scadenza', '>=', now())
+            ->where('white_list_scadenza', '<=', now()->addDays(90))
+            ->orderBy('white_list_scadenza')
+            ->get();
+
+        $expiredWhiteList = (clone $wlBase)
+            ->where('white_list_scadenza', '<', now())
+            ->orderByDesc('white_list_scadenza')
+            ->get();
+
+        return view('documents.expiring', compact(
+            'expiring', 'expired',
+            'expiringOfficers', 'expiredOfficers',
+            'expiringWhiteList', 'expiredWhiteList'
+        ));
     }
 
     public function destroy(Request $request, Document $document): RedirectResponse
