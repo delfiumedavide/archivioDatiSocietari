@@ -104,13 +104,16 @@
                                 <p class="text-xs text-gray-400 mt-1">Modifica richiede il riavvio del processo scheduler.</p>
                             </div>
 
-                            {{-- Indirizzi destinatari --}}
+                            {{-- Indirizzi destinatari aggiuntivi --}}
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Indirizzi Email Destinatari</label>
-                                <textarea name="notification_emails" rows="5"
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Indirizzi Aggiuntivi</label>
+                                <textarea name="notification_emails" rows="4"
                                     class="form-input font-mono text-sm"
-                                    placeholder="esempio@email.com&#10;altro@email.com">{{ old('notification_emails', $settings->notification_emails) }}</textarea>
-                                <p class="text-xs text-gray-400 mt-1">Un indirizzo per riga. Riceveranno sia l'invio automatico che quello manuale.</p>
+                                    placeholder="commercialista@studio.com&#10;segreteria@azienda.it">{{ old('notification_emails', $settings->notification_emails) }}</textarea>
+                                <p class="text-xs text-gray-400 mt-1">
+                                    Opzionale. Un indirizzo per riga. Ricevono la memo con <strong>tutti</strong> i documenti (vista globale).<br>
+                                    Gli utenti attivi del sistema ricevono già automaticamente la memo con le sole società a loro assegnate.
+                                </p>
                             </div>
 
                             {{-- Giorni anticipo --}}
@@ -376,17 +379,11 @@
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <h3 class="text-sm font-semibold text-gray-900 mb-3">Invia Memo Ora</h3>
                         <p class="text-xs text-gray-500 mb-4">
-                            Invia subito l'email promemoria con il riepilogo di tutti i documenti in scadenza e scaduti agli indirizzi configurati.
+                            Invia subito la memo a tutti gli utenti attivi (ognuno vede solo le proprie società) e agli indirizzi aggiuntivi configurati.
                         </p>
-                        @if(empty(trim($settings->notification_emails ?? '')))
-                            <div class="p-3 bg-yellow-50 rounded-lg text-xs text-yellow-700 mb-4">
-                                Nessun indirizzo configurato. Aggiungilo nella scheda Configurazione.
-                            </div>
-                        @endif
                         <form action="{{ route('email.send-expiry-reminder') }}" method="POST">
                             @csrf
-                            <button type="submit" class="btn-primary w-full justify-center"
-                                @if(empty(trim($settings->notification_emails ?? ''))) disabled @endif>
+                            <button type="submit" class="btn-primary w-full justify-center">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                                 </svg>

@@ -7,6 +7,7 @@ use App\Mail\FamilyStatusDeclarationMail;
 use App\Models\Document;
 use App\Models\FamilyStatusDeclaration;
 use App\Models\Member;
+use App\Models\User;
 use App\Services\AppSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -80,46 +81,70 @@ class EmailController extends Controller
     public function sendExpiryReminder(): RedirectResponse
     {
         $settings = $this->settingsService->get();
-        $rawEmails = trim($settings->notification_emails ?? '');
+        $days     = $settings->expiry_reminder_days ?? 30;
 
-        if (empty($rawEmails)) {
-            return redirect()->route('email.index', ['tab' => 'scadenze'])
-                ->with('error', 'Nessun indirizzo email configurato. Aggiungilo nella scheda Configurazione.');
-        }
-
-        $emails = collect(preg_split('/[\r\n,]+/', $rawEmails))
-            ->map(fn ($e) => trim($e))
-            ->filter(fn ($e) => filter_var($e, FILTER_VALIDATE_EMAIL))
-            ->values();
-
-        if ($emails->isEmpty()) {
-            return redirect()->route('email.index', ['tab' => 'scadenze'])
-                ->with('error', 'Nessun indirizzo email valido trovato nella configurazione.');
-        }
-
-        $days = $settings->expiry_reminder_days ?? 30;
-
-        $expiring = Document::with(['company', 'member', 'category'])
-            ->expiring($days)->orderBy('expiration_date')->get();
-        $expired  = Document::with(['company', 'member', 'category'])
-            ->expired()->orderBy('expiration_date')->get();
-
-        if ($expiring->isEmpty() && $expired->isEmpty()) {
-            return redirect()->route('email.index', ['tab' => 'scadenze'])
-                ->with('info', 'Nessun documento in scadenza o scaduto. Nessuna email inviata.');
-        }
-
-        $mailable = new DocumentExpiryReminderMail($expiring, $expired, $days);
-        $sent = 0;
+        $sent   = 0;
         $errors = [];
 
-        foreach ($emails as $email) {
+        // ── 1. Email personalizzata a ogni utente attivo ────────────────────
+        $users = User::active()
+            ->whereNotNull('email')
+            ->with(['roles', 'companies'])
+            ->get();
+
+        foreach ($users as $user) {
+            $expiring = Document::with(['company', 'member', 'category'])
+                ->forUser($user)->expiring($days)->orderBy('expiration_date')->get();
+
+            $expired = Document::with(['company', 'member', 'category'])
+                ->forUser($user)->expired()->orderBy('expiration_date')->get();
+
+            if ($expiring->isEmpty() && $expired->isEmpty()) {
+                continue;
+            }
+
             try {
-                Mail::to($email)->send($mailable);
+                Mail::to($user->email)->send(new DocumentExpiryReminderMail($expiring, $expired, $days));
                 $sent++;
             } catch (\Exception $e) {
-                $errors[] = $email;
+                $errors[] = $user->email;
             }
+        }
+
+        // ── 2. Indirizzi aggiuntivi configurati manualmente (vista globale) ─
+        $rawEmails = trim($settings->notification_emails ?? '');
+
+        if (!empty($rawEmails)) {
+            $extraEmails = collect(preg_split('/[\r\n,]+/', $rawEmails))
+                ->map(fn ($e) => trim($e))
+                ->filter(fn ($e) => filter_var($e, FILTER_VALIDATE_EMAIL))
+                ->values();
+
+            if ($extraEmails->isNotEmpty()) {
+                $allExpiring = Document::with(['company', 'member', 'category'])
+                    ->expiring($days)->orderBy('expiration_date')->get();
+
+                $allExpired = Document::with(['company', 'member', 'category'])
+                    ->expired()->orderBy('expiration_date')->get();
+
+                if ($allExpiring->isNotEmpty() || $allExpired->isNotEmpty()) {
+                    $mailable = new DocumentExpiryReminderMail($allExpiring, $allExpired, $days);
+
+                    foreach ($extraEmails as $email) {
+                        try {
+                            Mail::to($email)->send($mailable);
+                            $sent++;
+                        } catch (\Exception $e) {
+                            $errors[] = $email;
+                        }
+                    }
+                }
+            }
+        }
+
+        if ($sent === 0 && empty($errors)) {
+            return redirect()->route('email.index', ['tab' => 'scadenze'])
+                ->with('info', 'Nessun documento in scadenza o scaduto. Nessuna email inviata.');
         }
 
         $message = "Email promemoria inviata a {$sent} destinatari.";
