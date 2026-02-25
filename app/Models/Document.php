@@ -114,6 +114,15 @@ class Document extends Model
         return $bytes . ' B';
     }
 
+    /**
+     * Eager-load le relazioni standard (company, member, category).
+     * Non include 'uploader': aggiungilo esplicitamente dove serve.
+     */
+    public function scopeWithDetails($query)
+    {
+        return $query->with(['company', 'member', 'category']);
+    }
+
     public function scopeExpiring($query, int $days = 30)
     {
         return $query->whereNotNull('expiration_date')

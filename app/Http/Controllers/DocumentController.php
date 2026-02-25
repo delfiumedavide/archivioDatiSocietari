@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreDocumentRequest;
-use App\Models\ActivityLog;
 use App\Models\Company;
 use App\Models\CompanyOfficer;
 use App\Models\Document;
@@ -41,7 +40,7 @@ class DocumentController extends Controller
             ->withQueryString();
 
         $companies  = Company::active()->forUser($user)->orderBy('denominazione')->get();
-        $members    = Member::active()->forUser($user)->orderBy('cognome')->orderBy('nome')->get();
+        $members    = Member::active()->forUser($user)->orderByName()->get();
         $categories = DocumentCategory::orderBy('sort_order')->get();
 
         return view('documents.index', compact('documents', 'companies', 'members', 'categories'));
@@ -52,7 +51,7 @@ class DocumentController extends Controller
         $user = $request->user()->load('companies');
 
         $companies         = Company::active()->forUser($user)->orderBy('denominazione')->get();
-        $members           = Member::active()->forUser($user)->orderBy('cognome')->orderBy('nome')->get();
+        $members           = Member::active()->forUser($user)->orderByName()->get();
         $companyCategories = DocumentCategory::forCompany()->orderBy('sort_order')->get();
         $memberCategories  = DocumentCategory::forMember()->orderBy('sort_order')->get();
         $preselectedMemberId = $request->input('member_id');
@@ -92,16 +91,7 @@ class DocumentController extends Controller
             'uploaded_by'          => $user->id,
         ]);
 
-        ActivityLog::create([
-            'user_id'     => $user->id,
-            'action'      => 'uploaded',
-            'model_type'  => Document::class,
-            'model_id'    => $document->id,
-            'description' => "Caricato documento: {$document->title}",
-            'ip_address'  => $request->ip(),
-            'user_agent'  => substr((string) $request->userAgent(), 0, 500),
-            'created_at'  => now(),
-        ]);
+        $this->logActivity($request, 'uploaded', "Caricato documento: {$document->title}", Document::class, $document->id);
 
         return redirect()->route('documents.index')
             ->with('success', 'Documento caricato con successo.');
@@ -132,16 +122,7 @@ class DocumentController extends Controller
             abort_unless($user->canAccessCompany($document->company_id), 403);
         }
 
-        ActivityLog::create([
-            'user_id'     => $request->user()->id,
-            'action'      => 'downloaded',
-            'model_type'  => Document::class,
-            'model_id'    => $document->id,
-            'description' => "Scaricato documento: {$document->title}",
-            'ip_address'  => $request->ip(),
-            'user_agent'  => substr((string) $request->userAgent(), 0, 500),
-            'created_at'  => now(),
-        ]);
+        $this->logActivity($request, 'downloaded', "Scaricato documento: {$document->title}", Document::class, $document->id);
 
         return $this->storageService->download($document);
     }
@@ -186,13 +167,13 @@ class DocumentController extends Controller
         $companyIds = $user->accessibleCompanyIds(); // null = admin, [] = nessuna, [1,2] = filtrato
 
         // Documenti
-        $expiring = Document::with(['company', 'member', 'category'])
+        $expiring = Document::withDetails()
             ->forUser($user)
             ->expiring()
             ->orderBy('expiration_date')
             ->get();
 
-        $expired = Document::with(['company', 'member', 'category'])
+        $expired = Document::withDetails()
             ->forUser($user)
             ->expired()
             ->orderBy('expiration_date')
@@ -256,16 +237,7 @@ class DocumentController extends Controller
         $title = $document->title;
         $document->delete();
 
-        ActivityLog::create([
-            'user_id'     => $request->user()->id,
-            'action'      => 'deleted',
-            'model_type'  => Document::class,
-            'model_id'    => $document->id,
-            'description' => "Eliminato documento: {$title}",
-            'ip_address'  => $request->ip(),
-            'user_agent'  => substr((string) $request->userAgent(), 0, 500),
-            'created_at'  => now(),
-        ]);
+        $this->logActivity($request, 'deleted', "Eliminato documento: {$title}", Document::class, $document->id);
 
         return redirect()->route('documents.index')
             ->with('success', 'Documento eliminato.');

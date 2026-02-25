@@ -10,6 +10,7 @@ use App\Models\FamilyStatusDeclaration;
 use App\Models\Member;
 use App\Models\Riunione;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class DashboardService
@@ -51,26 +52,37 @@ class DashboardService
         });
     }
 
+    // ─── Helpers ───────────────────────────────────────────────────────────────
+
+    private function ck(string $method, ?array $ids, string $extra = ''): string
+    {
+        return 'dashboard.' . $method . '.' . md5(json_encode($ids) . $extra);
+    }
+
     // ─── Stats ─────────────────────────────────────────────────────────────────
 
     public function getSummaryStats(?array $companyIds = null): array
     {
-        return [
-            'total_companies' => $this->whenCompanies(Company::active(), $companyIds, 'id')->count(),
-            'total_members'   => $this->whenMembersOfCompanies(Member::active(), $companyIds)->count(),
-            'total_documents' => $this->applyDocumentScope(Document::query(), $companyIds)->count(),
-            'expiring_count'  => $this->applyDocumentScope(Document::query(), $companyIds)->expiring()->count(),
-            'expired_count'   => $this->applyDocumentScope(Document::query(), $companyIds)->expired()->count(),
-        ];
+        return Cache::remember($this->ck('summary', $companyIds), 300, function () use ($companyIds) {
+            return [
+                'total_companies' => $this->whenCompanies(Company::active(), $companyIds, 'id')->count(),
+                'total_members'   => $this->whenMembersOfCompanies(Member::active(), $companyIds)->count(),
+                'total_documents' => $this->applyDocumentScope(Document::query(), $companyIds)->count(),
+                'expiring_count'  => $this->applyDocumentScope(Document::query(), $companyIds)->expiring()->count(),
+                'expired_count'   => $this->applyDocumentScope(Document::query(), $companyIds)->expired()->count(),
+            ];
+        });
     }
 
     public function getRiunioniStats(?array $companyIds = null): array
     {
-        return [
-            'upcoming'        => $this->whenCompanies(Riunione::upcoming(), $companyIds)->count(),
-            'missing_verbale' => $this->whenCompanies(Riunione::missingVerbale(), $companyIds)->count(),
-            'year'            => $this->whenCompanies(Riunione::whereYear('data_ora', now()->year), $companyIds)->count(),
-        ];
+        return Cache::remember($this->ck('riunioni', $companyIds), 300, function () use ($companyIds) {
+            return [
+                'upcoming'        => $this->whenCompanies(Riunione::upcoming(), $companyIds)->count(),
+                'missing_verbale' => $this->whenCompanies(Riunione::missingVerbale(), $companyIds)->count(),
+                'year'            => $this->whenCompanies(Riunione::whereYear('data_ora', now()->year), $companyIds)->count(),
+            ];
+        });
     }
 
     public function getProssimeRiunioni(?array $companyIds = null, int $limit = 5): Collection
@@ -91,102 +103,112 @@ class DashboardService
 
     public function getDeclarationStats(?array $companyIds = null): array
     {
-        $year = now()->year;
+        return Cache::remember($this->ck('declarations', $companyIds), 300, function () use ($companyIds) {
+            $year = now()->year;
 
-        $base = FamilyStatusDeclaration::forYear($year);
+            $base = FamilyStatusDeclaration::forYear($year);
 
-        if ($companyIds !== null) {
-            if (empty($companyIds)) {
-                $base = $base->whereRaw('0 = 1');
-            } else {
-                $ids = $companyIds;
-                $base = $base->whereHas('member.officers', fn ($q) => $q->whereIn('company_id', $ids));
+            if ($companyIds !== null) {
+                if (empty($companyIds)) {
+                    $base = $base->whereRaw('0 = 1');
+                } else {
+                    $ids = $companyIds;
+                    $base = $base->whereHas('member.officers', fn ($q) => $q->whereIn('company_id', $ids));
+                }
             }
-        }
 
-        $generated = (clone $base)->count();
-        $signed    = (clone $base)->signed()->count();
+            $generated = (clone $base)->count();
+            $signed    = (clone $base)->signed()->count();
 
-        return [
-            'generated' => $generated,
-            'unsigned'  => $generated - $signed,
-            'signed'    => $signed,
-        ];
+            return [
+                'generated' => $generated,
+                'unsigned'  => $generated - $signed,
+                'signed'    => $signed,
+            ];
+        });
     }
 
     // ─── Charts ────────────────────────────────────────────────────────────────
 
     public function getExpirationData(?array $companyIds = null): array
     {
-        $base = $this->applyDocumentScope(Document::query(), $companyIds);
+        return Cache::remember($this->ck('expiration', $companyIds), 300, function () use ($companyIds) {
+            $base = $this->applyDocumentScope(Document::query(), $companyIds);
 
-        return [
-            'labels' => ['Validi', 'In Scadenza', 'Scaduti'],
-            'data'   => [
-                (clone $base)->valid()->count(),
-                (clone $base)->expiring()->count(),
-                (clone $base)->expired()->count(),
-            ],
-            'colors' => ['#10b981', '#f59e0b', '#ef4444'],
-        ];
+            return [
+                'labels' => ['Validi', 'In Scadenza', 'Scaduti'],
+                'data'   => [
+                    (clone $base)->valid()->count(),
+                    (clone $base)->expiring()->count(),
+                    (clone $base)->expired()->count(),
+                ],
+                'colors' => ['#10b981', '#f59e0b', '#ef4444'],
+            ];
+        });
     }
 
     public function getDocumentsByCategory(?array $companyIds = null): array
     {
-        $categories = DocumentCategory::withCount(['documents' => function ($q) use ($companyIds) {
-            $this->applyDocumentScope($q, $companyIds);
-        }])->orderBy('sort_order')->get();
+        return Cache::remember($this->ck('docs_by_category', $companyIds), 300, function () use ($companyIds) {
+            $categories = DocumentCategory::withCount(['documents' => function ($q) use ($companyIds) {
+                $this->applyDocumentScope($q, $companyIds);
+            }])->orderBy('sort_order')->get();
 
-        return [
-            'labels' => $categories->pluck('label')->toArray(),
-            'data'   => $categories->pluck('documents_count')->toArray(),
-            'colors' => [
-                '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b',
-                '#10b981', '#06b6d4', '#6366f1', '#f97316',
-                '#84cc16', '#64748b',
-            ],
-        ];
+            return [
+                'labels' => $categories->pluck('label')->toArray(),
+                'data'   => $categories->pluck('documents_count')->toArray(),
+                'colors' => [
+                    '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b',
+                    '#10b981', '#06b6d4', '#6366f1', '#f97316',
+                    '#84cc16', '#64748b',
+                ],
+            ];
+        });
     }
 
     public function getDocumentsByCompany(?array $companyIds = null): array
     {
-        $companies = $this->whenCompanies(Company::active(), $companyIds, 'id')
-            ->withCount('documents')
-            ->orderByDesc('documents_count')
-            ->get();
+        return Cache::remember($this->ck('docs_by_company', $companyIds), 300, function () use ($companyIds) {
+            $companies = $this->whenCompanies(Company::active(), $companyIds, 'id')
+                ->withCount('documents')
+                ->orderByDesc('documents_count')
+                ->get();
 
-        return [
-            'labels' => $companies->pluck('denominazione')->toArray(),
-            'data'   => $companies->pluck('documents_count')->toArray(),
-        ];
+            return [
+                'labels' => $companies->pluck('denominazione')->toArray(),
+                'data'   => $companies->pluck('documents_count')->toArray(),
+            ];
+        });
     }
 
     public function getUploadActivity(int $months = 12, ?array $companyIds = null): array
     {
-        $data = $this->applyDocumentScope(Document::query(), $companyIds)
-            ->select(
-                DB::raw("DATE_FORMAT(created_at, '%Y-%m') as month"),
-                DB::raw('COUNT(*) as total')
-            )
-            ->where('created_at', '>=', now()->subMonths($months)->startOfMonth())
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get();
+        return Cache::remember($this->ck('upload_activity', $companyIds, (string) $months), 300, function () use ($months, $companyIds) {
+            $data = $this->applyDocumentScope(Document::query(), $companyIds)
+                ->select(
+                    DB::raw("DATE_FORMAT(created_at, '%Y-%m') as month"),
+                    DB::raw('COUNT(*) as total')
+                )
+                ->where('created_at', '>=', now()->subMonths($months)->startOfMonth())
+                ->groupBy('month')
+                ->orderBy('month')
+                ->get();
 
-        $labels = [];
-        $values = [];
+            $labels = [];
+            $values = [];
 
-        for ($i = $months - 1; $i >= 0; $i--) {
-            $date     = now()->subMonths($i);
-            $key      = $date->format('Y-m');
-            $labels[] = $date->translatedFormat('M Y');
-            $values[] = $data->firstWhere('month', $key)?->total ?? 0;
-        }
+            for ($i = $months - 1; $i >= 0; $i--) {
+                $date     = now()->subMonths($i);
+                $key      = $date->format('Y-m');
+                $labels[] = $date->translatedFormat('M Y');
+                $values[] = $data->firstWhere('month', $key)?->total ?? 0;
+            }
 
-        return [
-            'labels' => $labels,
-            'data'   => $values,
-        ];
+            return [
+                'labels' => $labels,
+                'data'   => $values,
+            ];
+        });
     }
 
     public function getRecentActivity(int $limit = 10): Collection
@@ -199,7 +221,7 @@ class DashboardService
     public function getExpiringDocumentsList(int $limit = 20, ?array $companyIds = null): Collection
     {
         return $this->applyDocumentScope(
-            Document::with(['company', 'member', 'category']),
+            Document::withDetails(),
             $companyIds
         )
         ->where(function ($q) {

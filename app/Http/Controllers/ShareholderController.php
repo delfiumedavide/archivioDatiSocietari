@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ActivityLog;
 use App\Models\Company;
 use App\Models\Shareholder;
 use Illuminate\Http\RedirectResponse;
@@ -28,16 +27,7 @@ class ShareholderController extends Controller
 
         $shareholder = $company->shareholders()->create($validated);
 
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'created',
-            'model_type' => Shareholder::class,
-            'model_id' => $shareholder->id,
-            'description' => "Aggiunto socio: {$shareholder->nome} ({$company->denominazione})",
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
-        ]);
+        $this->logActivity($request, 'created', "Aggiunto socio: {$shareholder->nome} ({$company->denominazione})", Shareholder::class, $shareholder->id);
 
         return redirect()->route('companies.show', ['company' => $company, '#soci'])
             ->with('success', 'Socio aggiunto con successo.');

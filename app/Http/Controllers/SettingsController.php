@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ActivityLog;
 use App\Services\AppSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -49,16 +48,7 @@ class SettingsController extends Controller
 
         $this->settingsService->update($validated);
 
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'updated',
-            'model_type' => \App\Models\AppSetting::class,
-            'model_id' => 1,
-            'description' => 'Aggiornate impostazioni generali',
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
-        ]);
+        $this->logActivity($request, 'updated', 'Aggiornate impostazioni generali', \App\Models\AppSetting::class, 1);
 
         return redirect()->route('settings.index')
             ->with('success', 'Impostazioni aggiornate.');
@@ -72,16 +62,7 @@ class SettingsController extends Controller
 
         $this->settingsService->updateLogo($request->file('logo'));
 
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'uploaded',
-            'model_type' => \App\Models\AppSetting::class,
-            'model_id' => 1,
-            'description' => 'Aggiornato logo del gestionale',
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
-        ]);
+        $this->logActivity($request, 'uploaded', 'Aggiornato logo del gestionale', \App\Models\AppSetting::class, 1);
 
         return redirect()->route('settings.index')
             ->with('success', 'Logo aggiornato.');
@@ -95,16 +76,7 @@ class SettingsController extends Controller
 
         $this->settingsService->updateFavicon($request->file('favicon'));
 
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'uploaded',
-            'model_type' => \App\Models\AppSetting::class,
-            'model_id' => 1,
-            'description' => 'Aggiornata favicon del gestionale',
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
-        ]);
+        $this->logActivity($request, 'uploaded', 'Aggiornata favicon del gestionale', \App\Models\AppSetting::class, 1);
 
         return redirect()->route('settings.index')
             ->with('success', 'Favicon aggiornata.');
@@ -114,16 +86,7 @@ class SettingsController extends Controller
     {
         $this->settingsService->removeLogo();
 
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'deleted',
-            'model_type' => \App\Models\AppSetting::class,
-            'model_id' => 1,
-            'description' => 'Rimosso logo personalizzato',
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
-        ]);
+        $this->logActivity($request, 'deleted', 'Rimosso logo personalizzato', \App\Models\AppSetting::class, 1);
 
         return redirect()->route('settings.index')
             ->with('success', 'Logo rimosso. Ripristinato quello predefinito.');

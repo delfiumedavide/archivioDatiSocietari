@@ -2,29 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\DocumentExpiryReminderMail;
 use App\Mail\FamilyStatusDeclarationMail;
 use App\Models\Document;
 use App\Models\FamilyStatusDeclaration;
 use App\Models\Member;
-use App\Models\User;
 use App\Services\AppSettingsService;
+use App\Services\ExpiryEmailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
 
 class EmailController extends Controller
 {
-    public function __construct(private AppSettingsService $settingsService) {}
+    public function __construct(
+        private AppSettingsService $settingsService,
+        private ExpiryEmailService $expiryEmailService,
+    ) {}
 
     public function index(Request $request): View
     {
         $settings = $this->settingsService->get();
         $days = $settings->expiry_reminder_days ?? 30;
 
-        $expiring = Document::with(['company', 'member', 'category'])
+        $expiring = Document::withDetails()
             ->expiring($days)
             ->orderBy('expiration_date')
             ->limit(10)
@@ -37,7 +38,7 @@ class EmailController extends Controller
         $anno = (int) ($request->input('anno', date('Y')));
 
         $members = Member::where('is_active', true)
-            ->orderBy('cognome')->orderBy('nome')
+            ->orderByName()
             ->get();
 
         $declarations = FamilyStatusDeclaration::forYear($anno)
@@ -83,64 +84,10 @@ class EmailController extends Controller
         $settings = $this->settingsService->get();
         $days     = $settings->expiry_reminder_days ?? 30;
 
-        $sent   = 0;
-        $errors = [];
-
-        // ── 1. Email personalizzata a ogni utente attivo ────────────────────
-        $users = User::active()
-            ->whereNotNull('email')
-            ->with(['roles', 'companies'])
-            ->get();
-
-        foreach ($users as $user) {
-            $expiring = Document::with(['company', 'member', 'category'])
-                ->forUser($user)->expiring($days)->orderBy('expiration_date')->get();
-
-            $expired = Document::with(['company', 'member', 'category'])
-                ->forUser($user)->expired()->orderBy('expiration_date')->get();
-
-            if ($expiring->isEmpty() && $expired->isEmpty()) {
-                continue;
-            }
-
-            try {
-                Mail::to($user->email)->send(new DocumentExpiryReminderMail($expiring, $expired, $days));
-                $sent++;
-            } catch (\Exception $e) {
-                $errors[] = $user->email;
-            }
-        }
-
-        // ── 2. Indirizzi aggiuntivi configurati manualmente (vista globale) ─
-        $rawEmails = trim($settings->notification_emails ?? '');
-
-        if (!empty($rawEmails)) {
-            $extraEmails = collect(preg_split('/[\r\n,]+/', $rawEmails))
-                ->map(fn ($e) => trim($e))
-                ->filter(fn ($e) => filter_var($e, FILTER_VALIDATE_EMAIL))
-                ->values();
-
-            if ($extraEmails->isNotEmpty()) {
-                $allExpiring = Document::with(['company', 'member', 'category'])
-                    ->expiring($days)->orderBy('expiration_date')->get();
-
-                $allExpired = Document::with(['company', 'member', 'category'])
-                    ->expired()->orderBy('expiration_date')->get();
-
-                if ($allExpiring->isNotEmpty() || $allExpired->isNotEmpty()) {
-                    $mailable = new DocumentExpiryReminderMail($allExpiring, $allExpired, $days);
-
-                    foreach ($extraEmails as $email) {
-                        try {
-                            Mail::to($email)->send($mailable);
-                            $sent++;
-                        } catch (\Exception $e) {
-                            $errors[] = $email;
-                        }
-                    }
-                }
-            }
-        }
+        ['sent' => $sent, 'errors' => $errors] = $this->expiryEmailService->sendAll(
+            $days,
+            $settings->notification_emails ?? ''
+        );
 
         if ($sent === 0 && empty($errors)) {
             return redirect()->route('email.index', ['tab' => 'scadenze'])
@@ -241,20 +188,25 @@ class EmailController extends Controller
         $body      = $validated['body'];
         $memberIds = $validated['member_ids'];
 
+        // Bulk load — evita N+1 (2 query totali invece di 2×N)
+        $members      = Member::whereIn('id', $memberIds)->get()->keyBy('id');
+        $declarations = FamilyStatusDeclaration::whereIn('member_id', $memberIds)
+            ->where('anno', $anno)
+            ->get()
+            ->keyBy('member_id');
+
         $sent    = 0;
         $skipped = [];
 
         foreach ($memberIds as $memberId) {
-            $member = Member::find($memberId);
+            $member = $members->get($memberId);
 
             if (!$member || empty($member->email)) {
-                $skipped[] = $member?->full_name . ' (nessuna email)';
+                $skipped[] = ($member?->full_name ?? "ID {$memberId}") . ' (nessuna email)';
                 continue;
             }
 
-            $declaration = FamilyStatusDeclaration::where('member_id', $memberId)
-                ->where('anno', $anno)
-                ->first();
+            $declaration = $declarations->get($memberId);
 
             if (!$declaration || !$declaration->generated_path) {
                 $skipped[] = $member->full_name . ' (PDF non generato)';

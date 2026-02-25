@@ -111,7 +111,7 @@ class RiunioneController extends Controller
 
         // Members of the company for the partecipanti form
         $companyMembers = Member::whereHas('officers', fn ($q) => $q->where('company_id', $riunione->company_id))
-            ->orderBy('cognome')->orderBy('nome')
+            ->orderByName()
             ->get();
 
         // Build a keyed map of current partecipanti for the form

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCompanyRequest;
 use App\Http\Requests\UpdateCompanyRequest;
-use App\Models\ActivityLog;
 use App\Models\Company;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,16 +38,7 @@ class CompanyController extends Controller
     {
         $company = Company::create($request->validated());
 
-        ActivityLog::create([
-            'user_id'     => $request->user()->id,
-            'action'      => 'created',
-            'model_type'  => Company::class,
-            'model_id'    => $company->id,
-            'description' => "Creata società: {$company->denominazione}",
-            'ip_address'  => $request->ip(),
-            'user_agent'  => substr((string) $request->userAgent(), 0, 500),
-            'created_at'  => now(),
-        ]);
+        $this->logActivity($request, 'created', "Creata società: {$company->denominazione}", Company::class, $company->id);
 
         return redirect()->route('companies.show', $company)
             ->with('success', 'Società creata con successo.');
@@ -94,17 +84,8 @@ class CompanyController extends Controller
         $oldValues = $company->toArray();
         $company->update($request->validated());
 
-        ActivityLog::create([
-            'user_id'     => $request->user()->id,
-            'action'      => 'updated',
-            'model_type'  => Company::class,
-            'model_id'    => $company->id,
-            'description' => "Modificata società: {$company->denominazione}",
-            'properties'  => ['old' => $oldValues, 'new' => $company->fresh()->toArray()],
-            'ip_address'  => $request->ip(),
-            'user_agent'  => substr((string) $request->userAgent(), 0, 500),
-            'created_at'  => now(),
-        ]);
+        $this->logActivity($request, 'updated', "Modificata società: {$company->denominazione}", Company::class, $company->id,
+            ['old' => $oldValues, 'new' => $company->fresh()->toArray()]);
 
         return redirect()->route('companies.show', $company)
             ->with('success', 'Società aggiornata con successo.');
@@ -119,16 +100,7 @@ class CompanyController extends Controller
         $denominazione = $company->denominazione;
         $company->delete();
 
-        ActivityLog::create([
-            'user_id'     => $request->user()->id,
-            'action'      => 'deleted',
-            'model_type'  => Company::class,
-            'model_id'    => $company->id,
-            'description' => "Eliminata società: {$denominazione}",
-            'ip_address'  => $request->ip(),
-            'user_agent'  => substr((string) $request->userAgent(), 0, 500),
-            'created_at'  => now(),
-        ]);
+        $this->logActivity($request, 'deleted', "Eliminata società: {$denominazione}", Company::class, $company->id);
 
         return redirect()->route('companies.index')
             ->with('success', 'Società eliminata con successo.');

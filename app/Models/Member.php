@@ -84,6 +84,11 @@ class Member extends Model
         return $query->whereHas('officers', fn ($q) => $q->whereIn('company_id', $ids));
     }
 
+    public function scopeOrderByName($query)
+    {
+        return $query->orderBy('cognome')->orderBy('nome');
+    }
+
     public function scopeSearch($query, ?string $term)
     {
         if (empty($term)) {
@@ -104,7 +109,9 @@ class Member extends Model
 
     public function getCurrentStatoCivileAttribute(): ?string
     {
-        $latest = $this->familyStatusChanges()->first();
+        $latest = $this->relationLoaded('familyStatusChanges')
+            ? $this->familyStatusChanges->first()
+            : $this->familyStatusChanges()->first();
 
         return $latest?->stato_civile ?? $this->stato_civile;
     }

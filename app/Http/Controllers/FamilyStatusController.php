@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ActivityLog;
 use App\Models\FamilyMember;
 use App\Models\FamilyStatusChange;
 use App\Models\FamilyStatusDeclaration;
@@ -36,8 +35,7 @@ class FamilyStatusController extends Controller
                         ->whereRaw('data_variazione = (SELECT MAX(data_variazione) FROM family_status_changes WHERE family_status_changes.member_id = members.id)');
                 });
             })
-            ->orderBy('cognome')
-            ->orderBy('nome')
+            ->orderByName()
             ->paginate(20)
             ->withQueryString();
 
@@ -77,8 +75,7 @@ class FamilyStatusController extends Controller
         $membersQuery = Member::active()
             ->forUser($user)
             ->when($search, fn ($q, $v) => $q->search($v))
-            ->orderBy('cognome')
-            ->orderBy('nome');
+            ->orderByName();
 
         $members = $membersQuery->get();
         $memberIds = $members->pluck('id');
@@ -113,16 +110,7 @@ class FamilyStatusController extends Controller
 
         $declaration = $this->declarationService->generate($member, $year, $request->user()->id);
 
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'generated',
-            'model_type' => FamilyStatusDeclaration::class,
-            'model_id' => $declaration->id,
-            'description' => "Generata dichiarazione stato famiglia: {$member->full_name} - Anno {$year}",
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
-        ]);
+        $this->logActivity($request, 'generated', "Generata dichiarazione stato famiglia: {$member->full_name} - Anno {$year}", FamilyStatusDeclaration::class, $declaration->id);
 
         $redirectTo = $request->input('redirect', 'declarations');
 
@@ -150,16 +138,7 @@ class FamilyStatusController extends Controller
 
         $member = $declaration->member;
 
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'updated',
-            'model_type' => FamilyStatusDeclaration::class,
-            'model_id' => $declaration->id,
-            'description' => "Caricata dichiarazione firmata: {$member->full_name} - Anno {$declaration->anno}",
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
-        ]);
+        $this->logActivity($request, 'updated', "Caricata dichiarazione firmata: {$member->full_name} - Anno {$declaration->anno}", FamilyStatusDeclaration::class, $declaration->id);
 
         $redirectTo = $request->input('redirect', 'declarations');
 
@@ -189,16 +168,7 @@ class FamilyStatusController extends Controller
             $count++;
         }
 
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'generated',
-            'model_type' => FamilyStatusDeclaration::class,
-            'model_id' => 0,
-            'description' => "Generazione massiva dichiarazioni: {$count} membri - Anno {$year}",
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
-        ]);
+        $this->logActivity($request, 'generated', "Generazione massiva dichiarazioni: {$count} membri - Anno {$year}", FamilyStatusDeclaration::class, 0);
 
         return redirect()->route('family-status.declarations', ['anno' => $year])
             ->with('success', "Generate {$count} dichiarazioni per l'anno {$year}.");
@@ -230,16 +200,7 @@ class FamilyStatusController extends Controller
 
         $member->update(['stato_civile' => $validated['stato_civile']]);
 
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'created',
-            'model_type' => FamilyStatusChange::class,
-            'model_id' => $change->id,
-            'description' => "Variazione stato civile: {$member->full_name} - {$validated['stato_civile']}",
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
-        ]);
+        $this->logActivity($request, 'created', "Variazione stato civile: {$member->full_name} - {$validated['stato_civile']}", FamilyStatusChange::class, $change->id);
 
         return redirect()->route('family-status.show', $member)
             ->with('success', 'Variazione stato civile registrata.');
@@ -260,16 +221,7 @@ class FamilyStatusController extends Controller
 
         $familyMember = $member->familyMembers()->create($validated);
 
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'created',
-            'model_type' => FamilyMember::class,
-            'model_id' => $familyMember->id,
-            'description' => "Aggiunto componente nucleo: {$familyMember->full_name} ({$validated['relazione']}) a {$member->full_name}",
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
-        ]);
+        $this->logActivity($request, 'created', "Aggiunto componente nucleo: {$familyMember->full_name} ({$validated['relazione']}) a {$member->full_name}", FamilyMember::class, $familyMember->id);
 
         return redirect()->route('family-status.show', $member)
             ->with('success', 'Componente nucleo familiare aggiunto.');
@@ -291,16 +243,7 @@ class FamilyStatusController extends Controller
 
         $familyMember->update($validated);
 
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'updated',
-            'model_type' => FamilyMember::class,
-            'model_id' => $familyMember->id,
-            'description' => "Modificato componente nucleo: {$familyMember->full_name}",
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
-        ]);
+        $this->logActivity($request, 'updated', "Modificato componente nucleo: {$familyMember->full_name}", FamilyMember::class, $familyMember->id);
 
         return redirect()->route('family-status.show', $familyMember->member_id)
             ->with('success', 'Componente nucleo familiare aggiornato.');
@@ -313,16 +256,7 @@ class FamilyStatusController extends Controller
 
         $familyMember->update(['data_fine' => now()]);
 
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'updated',
-            'model_type' => FamilyMember::class,
-            'model_id' => $familyMember->id,
-            'description' => "Rimosso dal nucleo: {$fullName}",
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
-        ]);
+        $this->logActivity($request, 'updated', "Rimosso dal nucleo: {$fullName}", FamilyMember::class, $familyMember->id);
 
         return redirect()->route('family-status.show', $memberId)
             ->with('success', 'Componente rimosso dal nucleo familiare.');

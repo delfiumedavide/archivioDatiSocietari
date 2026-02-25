@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMemberRequest;
-use App\Models\ActivityLog;
 use App\Models\Member;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -22,8 +21,7 @@ class MemberController extends Controller
             ->when($request->input('white_list') !== null, function ($q) use ($request) {
                 $q->where('white_list', $request->boolean('white_list'));
             })
-            ->orderBy('cognome')
-            ->orderBy('nome')
+            ->orderByName()
             ->paginate(15)
             ->withQueryString();
 
@@ -39,16 +37,7 @@ class MemberController extends Controller
     {
         $member = Member::create($request->validated());
 
-        ActivityLog::create([
-            'user_id'     => $request->user()->id,
-            'action'      => 'created',
-            'model_type'  => Member::class,
-            'model_id'    => $member->id,
-            'description' => "Creato membro: {$member->full_name}",
-            'ip_address'  => $request->ip(),
-            'user_agent'  => substr((string) $request->userAgent(), 0, 500),
-            'created_at'  => now(),
-        ]);
+        $this->logActivity($request, 'created', "Creato membro: {$member->full_name}", Member::class, $member->id);
 
         return redirect()->route('members.show', $member)
             ->with('success', 'Membro creato con successo.');
@@ -96,16 +85,7 @@ class MemberController extends Controller
 
         $member->update($request->validated());
 
-        ActivityLog::create([
-            'user_id'     => $request->user()->id,
-            'action'      => 'updated',
-            'model_type'  => Member::class,
-            'model_id'    => $member->id,
-            'description' => "Modificato membro: {$member->full_name}",
-            'ip_address'  => $request->ip(),
-            'user_agent'  => substr((string) $request->userAgent(), 0, 500),
-            'created_at'  => now(),
-        ]);
+        $this->logActivity($request, 'updated', "Modificato membro: {$member->full_name}", Member::class, $member->id);
 
         return redirect()->route('members.show', $member)
             ->with('success', 'Membro aggiornato con successo.');
@@ -120,16 +100,7 @@ class MemberController extends Controller
         $fullName = $member->full_name;
         $member->delete();
 
-        ActivityLog::create([
-            'user_id'     => $request->user()->id,
-            'action'      => 'deleted',
-            'model_type'  => Member::class,
-            'model_id'    => $member->id,
-            'description' => "Eliminato membro: {$fullName}",
-            'ip_address'  => $request->ip(),
-            'user_agent'  => substr((string) $request->userAgent(), 0, 500),
-            'created_at'  => now(),
-        ]);
+        $this->logActivity($request, 'deleted', "Eliminato membro: {$fullName}", Member::class, $member->id);
 
         return redirect()->route('members.index')
             ->with('success', 'Membro eliminato.');

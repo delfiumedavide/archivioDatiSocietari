@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOfficerRequest;
-use App\Models\ActivityLog;
 use App\Models\Company;
 use App\Models\CompanyOfficer;
 use Illuminate\Http\RedirectResponse;
@@ -18,16 +17,7 @@ class CompanyOfficerController extends Controller
         $officer = $company->officers()->create($request->validated());
         $officer->load('member');
 
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'created',
-            'model_type' => CompanyOfficer::class,
-            'model_id' => $officer->id,
-            'description' => "Aggiunta carica: {$officer->member->full_name} - {$officer->ruolo} ({$company->denominazione})",
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
-        ]);
+        $this->logActivity($request, 'created', "Aggiunta carica: {$officer->member->full_name} - {$officer->ruolo} ({$company->denominazione})", CompanyOfficer::class, $officer->id);
 
         return redirect()->route('companies.show', ['company' => $company, '#cariche'])
             ->with('success', 'Carica societaria aggiunta con successo.');
@@ -40,16 +30,7 @@ class CompanyOfficerController extends Controller
         $officer->update($request->validated());
         $officer->load('member');
 
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'updated',
-            'model_type' => CompanyOfficer::class,
-            'model_id' => $officer->id,
-            'description' => "Modificata carica: {$officer->member->full_name} - {$officer->ruolo}",
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
-        ]);
+        $this->logActivity($request, 'updated', "Modificata carica: {$officer->member->full_name} - {$officer->ruolo}", CompanyOfficer::class, $officer->id);
 
         return redirect()->route('companies.show', ['company' => $officer->company_id, '#cariche'])
             ->with('success', 'Carica societaria aggiornata.');
@@ -66,16 +47,7 @@ class CompanyOfficerController extends Controller
         $officer->update(['data_cessazione' => $validated['data_cessazione']]);
         $officer->load('member');
 
-        ActivityLog::create([
-            'user_id'     => $request->user()->id,
-            'action'      => 'updated',
-            'model_type'  => CompanyOfficer::class,
-            'model_id'    => $officer->id,
-            'description' => "Cessata carica: {$officer->member->full_name} - {$officer->ruolo} (dal {$officer->data_cessazione->format('d/m/Y')})",
-            'ip_address'  => $request->ip(),
-            'user_agent'  => substr((string) $request->userAgent(), 0, 500),
-            'created_at'  => now(),
-        ]);
+        $this->logActivity($request, 'updated', "Cessata carica: {$officer->member->full_name} - {$officer->ruolo} (dal {$officer->data_cessazione->format('d/m/Y')})", CompanyOfficer::class, $officer->id);
 
         return redirect()->route('companies.show', ['company' => $officer->company_id, '#cariche'])
             ->with('success', 'Carica segnata come cessata.');
@@ -90,16 +62,7 @@ class CompanyOfficerController extends Controller
         $fullName = $officer->member->full_name;
         $officer->delete();
 
-        ActivityLog::create([
-            'user_id' => $request->user()->id,
-            'action' => 'deleted',
-            'model_type' => CompanyOfficer::class,
-            'model_id' => $officer->id,
-            'description' => "Rimossa carica: {$fullName}",
-            'ip_address' => $request->ip(),
-            'user_agent' => substr((string) $request->userAgent(), 0, 500),
-            'created_at' => now(),
-        ]);
+        $this->logActivity($request, 'deleted', "Rimossa carica: {$fullName}", CompanyOfficer::class, $officer->id);
 
         return redirect()->route('companies.show', ['company' => $companyId, '#cariche'])
             ->with('success', 'Carica societaria rimossa.');
