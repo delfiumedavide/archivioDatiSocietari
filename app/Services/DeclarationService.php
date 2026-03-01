@@ -6,16 +6,16 @@ use App\Models\FamilyStatusDeclaration;
 use App\Models\Member;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use ZipArchive;
 
 class DeclarationService
 {
-    private string $disk = 'documents';
-
-    public function __construct(private AppSettingsService $settingsService) {}
+    public function __construct(
+        private AppSettingsService $settingsService,
+        private StorageService $storage,
+    ) {}
 
     public function generate(Member $member, int $year, int $userId): FamilyStatusDeclaration
     {
@@ -35,7 +35,7 @@ class DeclarationService
 
         $path = "declarations/{$member->id}/{$year}/dichiarazione.pdf";
 
-        Storage::disk($this->disk)->put($path, $pdf->output());
+        $this->storage->put($path, $pdf->output());
 
         $declaration = FamilyStatusDeclaration::updateOrCreate(
             ['member_id' => $member->id, 'anno' => $year],
@@ -56,7 +56,7 @@ class DeclarationService
         $extension = $file->getClientOriginalExtension();
         $path = "declarations/{$declaration->member_id}/{$declaration->anno}/firmata_{$hash}.{$extension}";
 
-        Storage::disk($this->disk)->putFileAs(
+        $this->storage->putFileAs(
             dirname($path),
             $file,
             basename($path)
@@ -72,19 +72,19 @@ class DeclarationService
 
     public function downloadGenerated(FamilyStatusDeclaration $declaration): StreamedResponse
     {
-        if (!$declaration->generated_path || !Storage::disk($this->disk)->exists($declaration->generated_path)) {
+        if (!$declaration->generated_path || !$this->storage->exists($declaration->generated_path)) {
             abort(404, 'PDF non trovato.');
         }
 
         $member = $declaration->member;
         $filename = "dichiarazione_{$member->cognome}_{$member->nome}_{$declaration->anno}.pdf";
 
-        return Storage::disk($this->disk)->download($declaration->generated_path, $filename);
+        return $this->storage->download($declaration->generated_path, $filename);
     }
 
     public function downloadSigned(FamilyStatusDeclaration $declaration): StreamedResponse
     {
-        if (!$declaration->signed_path || !Storage::disk($this->disk)->exists($declaration->signed_path)) {
+        if (!$declaration->signed_path || !$this->storage->exists($declaration->signed_path)) {
             abort(404, 'PDF firmato non trovato.');
         }
 
@@ -92,7 +92,7 @@ class DeclarationService
         $ext = pathinfo($declaration->signed_path, PATHINFO_EXTENSION);
         $filename = "firmata_{$member->cognome}_{$member->nome}_{$declaration->anno}.{$ext}";
 
-        return Storage::disk($this->disk)->download($declaration->signed_path, $filename);
+        return $this->storage->download($declaration->signed_path, $filename);
     }
 
     public function buildBulkZip(int $year): string
@@ -113,10 +113,10 @@ class DeclarationService
         $zip->open($tempPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
 
         foreach ($declarations as $declaration) {
-            if (Storage::disk($this->disk)->exists($declaration->generated_path)) {
+            if ($this->storage->exists($declaration->generated_path)) {
                 $member = $declaration->member;
                 $zipName = "{$member->cognome}_{$member->nome}_{$declaration->anno}.pdf";
-                $zip->addFromString($zipName, Storage::disk($this->disk)->get($declaration->generated_path));
+                $zip->addFromString($zipName, $this->storage->get($declaration->generated_path));
             }
         }
 

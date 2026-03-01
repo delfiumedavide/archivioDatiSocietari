@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Services\AppSettingsService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class SettingsController extends Controller
@@ -41,7 +43,9 @@ class SettingsController extends Controller
             'holding_capitale_sociale' => ['nullable', 'numeric', 'min:0'],
             'declaration_header_title' => ['nullable', 'string', 'max:200'],
             'declaration_header_subtitle' => ['nullable', 'string', 'max:200'],
-            'declaration_footer_text' => ['nullable', 'string', 'max:500'],
+            'declaration_footer_text'  => ['nullable', 'string', 'max:500'],
+            'storage_mode'             => ['required', 'in:local,both,external'],
+            'storage_external_path'    => ['nullable', 'required_if:storage_mode,both', 'required_if:storage_mode,external', 'string', 'max:500'],
         ]);
 
         $validated['updated_by'] = $request->user()->id;
@@ -90,5 +94,25 @@ class SettingsController extends Controller
 
         return redirect()->route('settings.index')
             ->with('success', 'Logo rimosso. Ripristinato quello predefinito.');
+    }
+
+    public function testStorage(Request $request): JsonResponse
+    {
+        $path = trim($request->input('path', ''));
+
+        if (empty($path)) {
+            return response()->json(['ok' => false, 'message' => 'Percorso non specificato.'], 422);
+        }
+
+        try {
+            $disk     = Storage::build(['driver' => 'local', 'root' => $path]);
+            $testFile = '.storage_test_' . time();
+            $disk->put($testFile, 'ok');
+            $disk->delete($testFile);
+
+            return response()->json(['ok' => true, 'message' => 'Percorso accessibile in lettura e scrittura.']);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'message' => 'Errore: ' . $e->getMessage()], 422);
+        }
     }
 }

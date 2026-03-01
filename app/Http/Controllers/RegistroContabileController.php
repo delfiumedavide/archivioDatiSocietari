@@ -5,10 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\RegistroContabile;
 use App\Models\RegistroContabileVersion;
+use App\Services\StorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -16,6 +15,7 @@ use ZipArchive;
 
 class RegistroContabileController extends Controller
 {
+    public function __construct(private StorageService $storage) {}
     public function index(Request $request): View
     {
         $user = $request->user()->load('companies');
@@ -88,7 +88,7 @@ class RegistroContabileController extends Controller
         $hash = hash('sha256', $file->getClientOriginalName() . time() . Str::random(16));
         $path = "registri-contabili/{$validated['company_id']}/{$validated['anno']}/{$hash}.{$ext}";
 
-        Storage::disk('documents')->putFileAs(
+        $this->storage->putFileAs(
             "registri-contabili/{$validated['company_id']}/{$validated['anno']}",
             $file,
             "{$hash}.{$ext}"
@@ -141,7 +141,7 @@ class RegistroContabileController extends Controller
 
         abort_unless($user->canAccessCompany($registro->company_id), 403);
 
-        if (!Storage::disk('documents')->exists($registro->file_path)) {
+        if (!$this->storage->exists($registro->file_path)) {
             abort(404, 'File non trovato.');
         }
 
@@ -153,7 +153,7 @@ class RegistroContabileController extends Controller
             $registro->id
         );
 
-        return Storage::disk('documents')->download(
+        return $this->storage->download(
             $registro->file_path,
             $registro->file_name_original
         );
@@ -171,7 +171,7 @@ class RegistroContabileController extends Controller
 
         abort_unless($user->canAccessCompany($registro->company_id), 403);
 
-        if (!Storage::disk('documents')->exists($version->file_path)) {
+        if (!$this->storage->exists($version->file_path)) {
             abort(404, 'File versione non trovato.');
         }
 
@@ -187,7 +187,7 @@ class RegistroContabileController extends Controller
             $registro->id
         );
 
-        return Storage::disk('documents')->download($version->file_path, $downloadName);
+        return $this->storage->download($version->file_path, $downloadName);
     }
 
     public function uploadNewVersion(Request $request, RegistroContabile $registro): RedirectResponse
@@ -221,7 +221,7 @@ class RegistroContabileController extends Controller
         $hash  = hash('sha256', $file->getClientOriginalName() . time() . Str::random(16));
         $path  = "registri-contabili/{$registro->company_id}/{$registro->anno}/{$hash}.{$ext}";
 
-        Storage::disk('documents')->putFileAs(
+        $this->storage->putFileAs(
             "registri-contabili/{$registro->company_id}/{$registro->anno}",
             $file,
             "{$hash}.{$ext}"
@@ -266,14 +266,13 @@ class RegistroContabileController extends Controller
 
         abort_if($registri->isEmpty(), 404, 'Nessun registro trovato.');
 
-        $disk    = Storage::disk('documents');
         $tmpPath = sys_get_temp_dir() . '/registri_' . Str::random(12) . '.zip';
 
         $zip = new ZipArchive();
         $zip->open($tmpPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
 
         foreach ($registri as $registro) {
-            if (!$disk->exists($registro->file_path)) {
+            if (!$this->storage->exists($registro->file_path)) {
                 continue;
             }
 
@@ -283,7 +282,7 @@ class RegistroContabileController extends Controller
                 . '_' . Str::slug($registro->tipo_label)
                 . '.' . $ext;
 
-            $zip->addFromString($zipName, $disk->get($registro->file_path));
+            $zip->addFromString($zipName, $this->storage->get($registro->file_path));
         }
 
         $zip->close();

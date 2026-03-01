@@ -6,14 +6,15 @@ use App\Models\Company;
 use App\Models\Member;
 use App\Models\Riunione;
 use App\Models\RiunionePartecipante;
+use App\Services\StorageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RiunioneController extends Controller
 {
+    public function __construct(private StorageService $storage) {}
     // ─── Index / Dashboard ──────────────────────────────────────────────────────
 
     public function index(Request $request): View
@@ -151,10 +152,10 @@ class RiunioneController extends Controller
     {
         // Remove stored files
         if ($riunione->convocazione_path) {
-            Storage::disk('documents')->delete($riunione->convocazione_path);
+            $this->storage->delete($riunione->convocazione_path);
         }
         if ($riunione->verbale_path) {
-            Storage::disk('documents')->delete($riunione->verbale_path);
+            $this->storage->delete($riunione->verbale_path);
         }
 
         $riunione->delete();
@@ -188,13 +189,13 @@ class RiunioneController extends Controller
         ]);
 
         if ($riunione->convocazione_path) {
-            Storage::disk('documents')->delete($riunione->convocazione_path);
+            $this->storage->delete($riunione->convocazione_path);
         }
 
-        $path = $request->file('convocazione')->storeAs(
+        $path = $this->storage->storeAs(
             "libri-sociali/{$riunione->id}",
             'convocazione.pdf',
-            'documents'
+            $request->file('convocazione')
         );
 
         $riunione->update(['convocazione_path' => $path]);
@@ -210,13 +211,13 @@ class RiunioneController extends Controller
         ]);
 
         if ($riunione->verbale_path) {
-            Storage::disk('documents')->delete($riunione->verbale_path);
+            $this->storage->delete($riunione->verbale_path);
         }
 
-        $path = $request->file('verbale')->storeAs(
+        $path = $this->storage->storeAs(
             "libri-sociali/{$riunione->id}",
             'verbale.pdf',
-            'documents'
+            $request->file('verbale')
         );
 
         $riunione->update(['verbale_path' => $path]);
@@ -228,21 +229,21 @@ class RiunioneController extends Controller
     public function downloadConvocazione(Riunione $riunione): StreamedResponse
     {
         abort_unless($riunione->convocazione_path, 404);
-        abort_unless(Storage::disk('documents')->exists($riunione->convocazione_path), 404);
+        abort_unless($this->storage->exists($riunione->convocazione_path), 404);
 
         $filename = "Convocazione_{$riunione->tipo_short}_{$riunione->data_ora->format('Y-m-d')}.pdf";
 
-        return Storage::disk('documents')->download($riunione->convocazione_path, $filename);
+        return $this->storage->download($riunione->convocazione_path, $filename);
     }
 
     public function downloadVerbale(Riunione $riunione): StreamedResponse
     {
         abort_unless($riunione->verbale_path, 404);
-        abort_unless(Storage::disk('documents')->exists($riunione->verbale_path), 404);
+        abort_unless($this->storage->exists($riunione->verbale_path), 404);
 
         $filename = "Verbale_{$riunione->tipo_short}_{$riunione->data_ora->format('Y-m-d')}.pdf";
 
-        return Storage::disk('documents')->download($riunione->verbale_path, $filename);
+        return $this->storage->download($riunione->verbale_path, $filename);
     }
 
     // ─── Partecipanti ───────────────────────────────────────────────────────────

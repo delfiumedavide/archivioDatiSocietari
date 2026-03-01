@@ -189,6 +189,104 @@
             </div>
         </div>
 
+        {{-- ============================================================ --}}
+        {{-- Sezione 4: Archiviazione File --}}
+        {{-- ============================================================ --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6"
+             x-data="{ mode: '{{ old('storage_mode', $settings->storage_mode ?? 'local') }}', testResult: null, testing: false }">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-base font-semibold text-gray-900">Archiviazione File</h3>
+                <p class="text-xs text-gray-500 mt-0.5">Configura dove vengono salvati i file caricati nel gestionale</p>
+            </div>
+            <div class="px-6 py-5 space-y-5">
+                {{-- Modalità --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-3">Modalità archiviazione</label>
+                    <div class="space-y-3">
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            <input type="radio" name="storage_mode" value="local" x-model="mode" class="mt-0.5 text-brand-600 focus:ring-brand-500">
+                            <div>
+                                <span class="text-sm font-medium text-gray-800">Solo locale</span>
+                                <p class="text-xs text-gray-500 mt-0.5">I file vengono salvati solo sul server del gestionale (predefinito)</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            <input type="radio" name="storage_mode" value="both" x-model="mode" class="mt-0.5 text-brand-600 focus:ring-brand-500">
+                            <div>
+                                <span class="text-sm font-medium text-gray-800">Locale + Server esterno</span>
+                                <p class="text-xs text-gray-500 mt-0.5">Ogni file viene salvato sia in locale che nel percorso esterno (copia automatica)</p>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            <input type="radio" name="storage_mode" value="external" x-model="mode" class="mt-0.5 text-brand-600 focus:ring-brand-500">
+                            <div>
+                                <span class="text-sm font-medium text-gray-800">Solo server esterno</span>
+                                <p class="text-xs text-gray-500 mt-0.5">I file vengono salvati e letti esclusivamente dal percorso esterno</p>
+                            </div>
+                        </label>
+                    </div>
+                    @error('storage_mode') <p class="text-xs text-red-600 mt-2">{{ $message }}</p> @enderror
+                </div>
+
+                {{-- Percorso esterno (visibile solo se mode != local) --}}
+                <div x-show="mode !== 'local'" x-transition class="border-t border-gray-100 pt-4">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">
+                        Percorso esterno sul server
+                        <span class="text-red-500">*</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="text" name="storage_external_path"
+                               value="{{ old('storage_external_path', $settings->storage_external_path) }}"
+                               class="form-input flex-1 text-sm font-mono"
+                               placeholder="es. /mnt/archivio  o  /var/shared/documenti">
+                        <button type="button"
+                                @click="
+                                    testing = true;
+                                    testResult = null;
+                                    fetch('{{ route('settings.test-storage') }}', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                                        },
+                                        body: JSON.stringify({ path: document.querySelector('[name=storage_external_path]').value })
+                                    })
+                                    .then(r => r.json())
+                                    .then(data => { testResult = data; testing = false; })
+                                    .catch(() => { testResult = { ok: false, message: 'Errore di rete.' }; testing = false; })
+                                "
+                                class="inline-flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-2 rounded-lg transition text-sm whitespace-nowrap"
+                                :disabled="testing">
+                            <svg x-show="!testing" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <svg x-show="testing" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                            </svg>
+                            <span x-text="testing ? 'Test...' : 'Testa percorso'"></span>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">Il percorso deve essere accessibile dal processo PHP del server (cartella montata, NFS, ecc.)</p>
+                    @error('storage_external_path') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+
+                    {{-- Risultato test --}}
+                    <div x-show="testResult !== null" x-transition class="mt-3">
+                        <div :class="testResult?.ok ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'"
+                             class="border rounded-lg px-4 py-3 flex items-center gap-2 text-sm">
+                            <svg x-show="testResult?.ok" class="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <svg x-show="!testResult?.ok" class="w-4 h-4 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                            </svg>
+                            <span x-text="testResult?.message"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Save Button --}}
         <div class="flex items-center gap-3">
             <button type="submit" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-medium px-6 py-2.5 rounded-lg transition text-sm">

@@ -6,13 +6,12 @@ use App\Models\Document;
 use App\Models\DocumentVersion;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentStorageService
 {
-    private string $disk = 'documents';
+    public function __construct(private StorageService $storage) {}
 
     public function store(UploadedFile $file, int $companyId, string $categorySlug): string
     {
@@ -22,7 +21,7 @@ class DocumentStorageService
 
         $path = "{$companyId}/{$categorySlug}/{$year}/{$hashedName}.{$extension}";
 
-        Storage::disk($this->disk)->putFileAs(
+        $this->storage->putFileAs(
             dirname($path),
             $file,
             basename($path)
@@ -39,7 +38,7 @@ class DocumentStorageService
 
         $path = "members/{$memberId}/{$categorySlug}/{$year}/{$hashedName}.{$extension}";
 
-        Storage::disk($this->disk)->putFileAs(
+        $this->storage->putFileAs(
             dirname($path),
             $file,
             basename($path)
@@ -82,11 +81,11 @@ class DocumentStorageService
 
     public function download(Document $document): StreamedResponse
     {
-        if (!Storage::disk($this->disk)->exists($document->file_path)) {
+        if (!$this->storage->exists($document->file_path)) {
             abort(404, 'File non trovato.');
         }
 
-        return Storage::disk($this->disk)->download(
+        return $this->storage->download(
             $document->file_path,
             $document->file_name_original
         );
@@ -94,7 +93,7 @@ class DocumentStorageService
 
     public function downloadVersion(DocumentVersion $version, Document $document): StreamedResponse
     {
-        if (!Storage::disk($this->disk)->exists($version->file_path)) {
+        if (!$this->storage->exists($version->file_path)) {
             abort(404, 'File versione non trovato.');
         }
 
@@ -102,16 +101,16 @@ class DocumentStorageService
             . '_v' . $version->version
             . '.' . pathinfo($document->file_name_original, PATHINFO_EXTENSION);
 
-        return Storage::disk($this->disk)->download($version->file_path, $originalName);
+        return $this->storage->download($version->file_path, $originalName);
     }
 
     public function delete(Document $document): bool
     {
         foreach ($document->versions as $version) {
-            Storage::disk($this->disk)->delete($version->file_path);
+            $this->storage->delete($version->file_path);
         }
 
-        Storage::disk($this->disk)->delete($document->file_path);
+        $this->storage->delete($document->file_path);
 
         return true;
     }

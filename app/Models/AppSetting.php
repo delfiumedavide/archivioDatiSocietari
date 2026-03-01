@@ -22,6 +22,7 @@ class AppSetting extends Model
         'smtp_host', 'smtp_port', 'smtp_encryption',
         'smtp_username', 'smtp_password',
         'smtp_from_address', 'smtp_from_name',
+        'storage_mode', 'storage_external_path',
         'updated_by',
     ];
 
