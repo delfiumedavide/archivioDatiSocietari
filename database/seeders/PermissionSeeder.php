@@ -33,9 +33,6 @@ class PermissionSeeder extends Seeder
             ['name' => 'documents.download', 'section' => 'documents', 'label' => 'Scarica Documenti'],
             ['name' => 'documents.delete', 'section' => 'documents', 'label' => 'Elimina Documenti'],
 
-            // Reports
-            ['name' => 'reports.view', 'section' => 'reports', 'label' => 'Visualizza Report'],
-
             // Users
             ['name' => 'users.manage', 'section' => 'users', 'label' => 'Gestisci Utenti'],
 
@@ -52,6 +49,10 @@ class PermissionSeeder extends Seeder
             // Stati Famiglia
             ['name' => 'stati_famiglia.view', 'section' => 'stati_famiglia', 'label' => 'Visualizza Stati Famiglia'],
             ['name' => 'stati_famiglia.manage', 'section' => 'stati_famiglia', 'label' => 'Gestisci Stati Famiglia'],
+
+            // Libri Sociali
+            ['name' => 'libri_sociali.view',   'section' => 'libri_sociali', 'label' => 'Visualizza Libri Sociali'],
+            ['name' => 'libri_sociali.manage', 'section' => 'libri_sociali', 'label' => 'Gestisci Libri Sociali'],
 
             // Registri Contabili
             ['name' => 'registri_contabili.view',     'section' => 'registri_contabili', 'label' => 'Visualizza Registri Contabili'],

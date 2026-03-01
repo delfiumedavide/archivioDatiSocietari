@@ -120,8 +120,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('email/send-declarations', [EmailController::class, 'sendDeclarations'])->name('email.send-declarations');
         Route::put('email/smtp', [EmailController::class, 'updateSmtpSettings'])->name('email.update-smtp');
         Route::post('email/smtp-test', [EmailController::class, 'testSmtpConnection'])->name('email.test-smtp');
+    });
 
-        // Libri Sociali
+    // Libri Sociali
+    Route::middleware('permission:libri_sociali')->group(function () {
         Route::prefix('libri-sociali')->name('libri-sociali.')->group(function () {
             Route::get('/', [RiunioneController::class, 'index'])->name('index');
             Route::get('/create', [RiunioneController::class, 'create'])->name('create');
