@@ -74,6 +74,17 @@ class RegistroContabile extends Model
         'liquidazione_iva_margine',
     ];
 
+    /** Etichette brevi per le pill nella vista completezza. */
+    public const TIPI_IVA_MENSILI_SHORT = [
+        'registro_iva_vendite'          => 'IVA Vendite',
+        'registro_iva_acquisti'         => 'IVA Acquisti',
+        'registro_corrispettivi'        => 'Corrispettivi',
+        'liquidazione_iva_ordinaria'    => 'Liq. Ordinaria',
+        'registro_iva_vendite_margine'  => 'IVA Vend. M.',
+        'registro_iva_acquisti_margine' => 'IVA Acq. M.',
+        'liquidazione_iva_margine'      => 'Liq. Margine',
+    ];
+
     /** Tipi mensili riservati al regime del margine. */
     public const TIPI_IVA_MARGINE = [
         'registro_iva_vendite_margine',

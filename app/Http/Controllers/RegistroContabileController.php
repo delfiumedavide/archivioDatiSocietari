@@ -334,7 +334,7 @@ class RegistroContabileController extends Controller
         // Tipi IVA margine: slug => label (sottoinsieme di TIPI)
         $tipiMensiliMargine = array_intersect_key(RegistroContabile::TIPI, array_flip(RegistroContabile::TIPI_IVA_MARGINE));
 
-        // Registri mensili presenti: company_id → mese → [tipi presenti come set]
+        // Registri mensili presenti: company_id → mese → tipo → registro (con id)
         $presentiMensili = RegistroContabile::whereIn('company_id', $companyIds)
             ->where('anno', $anno)
             ->whereNotNull('mese')
@@ -342,13 +342,15 @@ class RegistroContabileController extends Controller
             ->groupBy('company_id')
             ->map(fn ($byCompany) =>
                 $byCompany->groupBy('mese')
-                    ->map(fn ($byMese) => $byMese->pluck('tipo')->flip())  // tipo => index (per isset())
+                    ->map(fn ($byMese) => $byMese->keyBy('tipo'))  // tipo => registro (con id)
             );
+
+        $tipiMensiliShort = RegistroContabile::TIPI_IVA_MENSILI_SHORT;
 
         return view('registri-contabili.completezza', compact(
             'companies', 'tipiAnnuali', 'anni', 'anno',
             'presentiAnnuali', 'mesiDaVerificare', 'mesiLabels',
-            'tipiMensiliStd', 'tipiMensiliMargine', 'presentiMensili'
+            'tipiMensiliStd', 'tipiMensiliMargine', 'tipiMensiliShort', 'presentiMensili'
         ));
     }
 
