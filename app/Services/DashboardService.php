@@ -8,6 +8,7 @@ use App\Models\Document;
 use App\Models\DocumentCategory;
 use App\Models\FamilyStatusDeclaration;
 use App\Models\Member;
+use App\Models\RegistroContabile;
 use App\Models\Riunione;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -230,5 +231,23 @@ class DashboardService
         ->orderByRaw("CASE WHEN expiration_date < NOW() THEN 0 ELSE 1 END, expiration_date ASC")
         ->limit($limit)
         ->get();
+    }
+
+    public function getRegistriMissingCount(?array $companyIds = null): int
+    {
+        return Cache::remember($this->ck('registri_missing', $companyIds), 300, function () use ($companyIds) {
+            $allIds = $this->whenCompanies(Company::active(), $companyIds, 'id')->pluck('id');
+
+            if ($allIds->isEmpty()) {
+                return 0;
+            }
+
+            $withRegistri = RegistroContabile::whereIn('company_id', $allIds)
+                ->where('anno', now()->year)
+                ->distinct()
+                ->pluck('company_id');
+
+            return $allIds->diff($withRegistri)->count();
+        });
     }
 }

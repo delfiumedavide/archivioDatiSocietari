@@ -33,6 +33,10 @@ class DashboardController extends Controller
             $data['declarationStats'] = $this->dashboardService->getDeclarationStats();
         }
 
+        if ($user->hasSection('registri_contabili')) {
+            $data['registriMissingCount'] = $this->dashboardService->getRegistriMissingCount($companyIds);
+        }
+
         return view('dashboard.index', $data);
     }
 }

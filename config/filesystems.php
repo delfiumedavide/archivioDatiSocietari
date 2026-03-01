@@ -18,7 +18,7 @@ return [
         ],
         'documents' => [
             'driver' => 'local',
-            'root' => storage_path('app/documents'),
+            'root' => env('DOCUMENTS_ROOT', storage_path('app/documents')),
             'visibility' => 'private',
             'throw' => true,
         ],

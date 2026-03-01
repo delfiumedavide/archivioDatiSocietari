@@ -35,8 +35,9 @@ class UpdateCompanyRequest extends FormRequest
             'descrizione_attivita' => ['nullable', 'string', 'max:5000'],
             'telefono' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:255'],
-            'sito_web' => ['nullable', 'url', 'max:255'],
-            'note' => ['nullable', 'string', 'max:5000'],
+            'sito_web'             => ['nullable', 'url', 'max:255'],
+            'note'                 => ['nullable', 'string', 'max:5000'],
+            'gestisce_iva_margine' => ['boolean'],
         ];
     }
 }

@@ -18,7 +18,7 @@ class Company extends Model
         'sede_legale_provincia', 'sede_legale_cap', 'capitale_sociale',
         'capitale_versato', 'data_costituzione', 'numero_rea', 'cciaa',
         'codice_ateco', 'descrizione_attivita', 'telefono', 'email',
-        'sito_web', 'note', 'is_active', 'logo_path',
+        'sito_web', 'note', 'is_active', 'gestisce_iva_margine', 'logo_path',
     ];
 
     protected function casts(): array
@@ -27,7 +27,8 @@ class Company extends Model
             'capitale_sociale' => 'decimal:2',
             'capitale_versato' => 'decimal:2',
             'data_costituzione' => 'date',
-            'is_active' => 'boolean',
+            'is_active'             => 'boolean',
+        'gestisce_iva_margine'  => 'boolean',
         ];
     }
 

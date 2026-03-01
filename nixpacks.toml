@@ -10,4 +10,4 @@ cmds = [
 ]
 
 [start]
-cmd = "php artisan migrate --force && php artisan db:seed --class=DocumentCategorySeeder --force && php artisan db:seed --class=PermissionSeeder --force && php -S 0.0.0.0:${PORT:-8080} -t public"
+cmd = "sh -lc 'php artisan storage:link || true; php artisan migrate --force; if [ \"${RUN_DB_SEED:-false}\" = \"true\" ]; then php artisan db:seed --force; fi; php -S 0.0.0.0:${PORT:-8080} -t public'"

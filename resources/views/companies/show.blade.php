@@ -73,6 +73,14 @@
             <button @click="activeTab = 'relazioni'" :class="activeTab === 'relazioni' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="px-5 py-3 border-b-2 font-medium text-sm whitespace-nowrap transition">
                 Relazioni
             </button>
+            @if(auth()->user()->hasSection('registri_contabili'))
+            <button @click="activeTab = 'registri'" :class="activeTab === 'registri' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="px-5 py-3 border-b-2 font-medium text-sm whitespace-nowrap transition">
+                Libri e Registri
+                @if($registriContabili->count() > 0)
+                <span class="ml-1.5 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{{ $registriContabili->count() }}</span>
+                @endif
+            </button>
+            @endif
         </nav>
     </div>
 
@@ -964,6 +972,84 @@
             </div>
         </div>
     </div>
+
+    {{-- ============================================================ --}}
+    {{-- TAB: Libri e Registri Contabili --}}
+    {{-- ============================================================ --}}
+    @if(auth()->user()->hasSection('registri_contabili'))
+    <div x-show="activeTab === 'registri'" x-transition>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                <h3 class="text-base font-semibold text-gray-900">Libri e Registri Contabili</h3>
+                <div class="flex items-center gap-3">
+                    @if(auth()->user()->hasPermission('registri_contabili.upload'))
+                    <a href="{{ route('registri-contabili.create', ['company_id' => $company->id]) }}"
+                       class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-medium px-3 py-1.5 rounded-lg transition text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Carica Registro
+                    </a>
+                    @endif
+                    <a href="{{ route('registri-contabili.index', ['company_id' => $company->id]) }}"
+                       class="inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700 font-medium">
+                        Vedi tutti
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </div>
+
+            @if($registriContabili->isNotEmpty())
+            <div class="divide-y divide-gray-100">
+                @foreach($registriContabili as $registro)
+                <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition">
+                    <div class="flex items-center gap-4 min-w-0">
+                        <div class="flex-shrink-0 w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h6m-6 4h6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/>
+                            </svg>
+                        </div>
+                        <div class="min-w-0">
+                            <a href="{{ route('registri-contabili.show', $registro) }}"
+                               class="text-sm font-medium text-gray-900 hover:text-brand-600 transition truncate block">
+                                {{ $registro->titolo }}
+                            </a>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <span class="text-xs text-gray-500">{{ $registro->tipo_label }}</span>
+                                <span class="text-gray-300">·</span>
+                                <span class="text-xs font-medium text-gray-700">{{ $registro->anno }}</span>
+                                <span class="text-gray-300">·</span>
+                                <span class="text-xs text-gray-400">v{{ $registro->current_version }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 flex-shrink-0 ml-4">
+                        @if(auth()->user()->hasPermission('registri_contabili.download'))
+                        <a href="{{ route('registri-contabili.download', $registro) }}"
+                           class="text-gray-400 hover:text-green-600 transition" title="Scarica">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                            </svg>
+                        </a>
+                        @endif
+                    </div>
+                </div>
+                @endforeach
+            </div>
+            @else
+            <div class="px-6 py-12 text-center">
+                <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h6m-6 4h6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/>
+                </svg>
+                <h4 class="mt-3 text-sm font-medium text-gray-900">Nessun registro contabile</h4>
+                <p class="mt-1 text-xs text-gray-500">Non ci sono ancora libri o registri associati a questa società.</p>
+                @if(auth()->user()->hasPermission('registri_contabili.upload'))
+                <a href="{{ route('registri-contabili.create', ['company_id' => $company->id]) }}"
+                   class="mt-3 inline-block text-brand-600 hover:underline text-sm">Carica il primo registro</a>
+                @endif
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
 
 </div>
 @endsection

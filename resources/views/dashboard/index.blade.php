@@ -203,6 +203,27 @@
         @endif
     </div>
 
+    {{-- ── REGISTRI CONTABILI ALERT ── --}}
+    @if(auth()->user()->hasSection('registri_contabili') && ($registriMissingCount ?? 0) > 0)
+    <a href="{{ route('registri-contabili.completezza') }}"
+       class="flex items-center gap-4 rounded-xl border border-indigo-200 bg-indigo-50 px-5 py-4 hover:shadow-md hover:border-indigo-300 transition-all">
+        <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-indigo-800">
+                {{ $registriMissingCount }} {{ Str::plural('società', $registriMissingCount) }} {{ $registriMissingCount === 1 ? 'non ha' : 'non hanno' }} ancora caricato i registri contabili per il {{ now()->year }}
+            </p>
+            <p class="text-xs text-indigo-600 mt-0.5">Clicca per verificare la completezza e caricare i documenti mancanti</p>
+        </div>
+        <svg class="w-5 h-5 text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+    </a>
+    @endif
+
     {{-- ── LIBRI SOCIALI WIDGET (solo admin) ── --}}
     @if(auth()->user()->isAdmin())
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">

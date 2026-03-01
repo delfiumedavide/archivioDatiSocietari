@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreCompanyRequest;
 use App\Http\Requests\UpdateCompanyRequest;
 use App\Models\Company;
+use App\Models\RegistroContabile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -67,7 +68,16 @@ class CompanyController extends Controller
             ->orderBy('denominazione')
             ->get(['id', 'denominazione']);
 
-        return view('companies.show', compact('company', 'ceasedOfficers', 'otherCompanies'));
+        $registriContabili = collect();
+        if ($request->user()->hasSection('registri_contabili')) {
+            $registriContabili = RegistroContabile::where('company_id', $company->id)
+                ->with('uploader')
+                ->latest()
+                ->limit(20)
+                ->get();
+        }
+
+        return view('companies.show', compact('company', 'ceasedOfficers', 'otherCompanies', 'registriContabili'));
     }
 
     public function edit(Request $request, Company $company): View

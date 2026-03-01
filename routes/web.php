@@ -9,6 +9,7 @@ use App\Http\Controllers\CompanyRelationshipController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliberaController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\RegistroContabileController;
 use App\Http\Controllers\EmailController;
 use App\Http\Controllers\FamilyStatusController;
 use App\Http\Controllers\MemberController;
@@ -147,6 +148,20 @@ Route::middleware(['auth'])->group(function () {
         // Delibere: update/delete con route model binding diretto
         Route::put('delibere/{delibera}', [DeliberaController::class, 'update'])->name('delibere.update');
         Route::delete('delibere/{delibera}', [DeliberaController::class, 'destroy'])->name('delibere.destroy');
+    });
+
+    // Libri e Registri Contabili
+    Route::middleware('permission:registri_contabili')->group(function () {
+        Route::get('registri-contabili', [RegistroContabileController::class, 'index'])->name('registri-contabili.index');
+        Route::get('registri-contabili/create', [RegistroContabileController::class, 'create'])->name('registri-contabili.create');
+        Route::post('registri-contabili', [RegistroContabileController::class, 'store'])->name('registri-contabili.store');
+        Route::get('registri-contabili/completezza', [RegistroContabileController::class, 'completezza'])->name('registri-contabili.completezza');
+        Route::post('registri-contabili/export-zip', [RegistroContabileController::class, 'exportZip'])->name('registri-contabili.export-zip');
+        Route::get('registri-contabili/{registro}', [RegistroContabileController::class, 'show'])->name('registri-contabili.show');
+        Route::get('registri-contabili/{registro}/download', [RegistroContabileController::class, 'download'])->name('registri-contabili.download');
+        Route::post('registri-contabili/{registro}/new-version', [RegistroContabileController::class, 'uploadNewVersion'])->name('registri-contabili.new-version');
+        Route::get('registri-contabili/{registro}/versions/{version}/download', [RegistroContabileController::class, 'downloadVersion'])->name('registri-contabili.download-version');
+        Route::delete('registri-contabili/{registro}', [RegistroContabileController::class, 'destroy'])->name('registri-contabili.destroy');
     });
 
     // Notifications

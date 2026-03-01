@@ -149,6 +149,27 @@
             </div>
         </div>
 
+        {{-- Configurazione IVA Margine --}}
+        <div class="card">
+            <div class="card-header"><h2 class="text-lg font-semibold text-gray-900">Configurazione Contabile</h2></div>
+            <div class="card-body">
+                <label class="flex items-start gap-3 cursor-pointer group">
+                    <input type="hidden" name="gestisce_iva_margine" value="0">
+                    <input type="checkbox" id="gestisce_iva_margine" name="gestisce_iva_margine" value="1"
+                           class="mt-0.5 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                           {{ old('gestisce_iva_margine', $company->gestisce_iva_margine) ? 'checked' : '' }}>
+                    <div>
+                        <span class="block text-sm font-medium text-gray-900 group-hover:text-brand-700">Gestisce IVA Margine</span>
+                        <span class="block text-xs text-gray-500 mt-0.5">
+                            Se abilitato, nella verifica di completezza mensile vengono richiesti anche
+                            <em>Registro IVA Vendite Margine</em>, <em>Registro IVA Acquisti Margine</em>
+                            e <em>Liquidazione IVA Margine</em>.
+                        </span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
         <div class="flex justify-end gap-4">
             <a href="{{ route('companies.show', $company) }}" class="btn-secondary">Annulla</a>
             <button type="submit" class="btn-primary">

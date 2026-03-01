@@ -52,6 +52,12 @@ class PermissionSeeder extends Seeder
             // Stati Famiglia
             ['name' => 'stati_famiglia.view', 'section' => 'stati_famiglia', 'label' => 'Visualizza Stati Famiglia'],
             ['name' => 'stati_famiglia.manage', 'section' => 'stati_famiglia', 'label' => 'Gestisci Stati Famiglia'],
+
+            // Registri Contabili
+            ['name' => 'registri_contabili.view',     'section' => 'registri_contabili', 'label' => 'Visualizza Registri Contabili'],
+            ['name' => 'registri_contabili.upload',   'section' => 'registri_contabili', 'label' => 'Carica Registri Contabili'],
+            ['name' => 'registri_contabili.download', 'section' => 'registri_contabili', 'label' => 'Scarica Registri Contabili'],
+            ['name' => 'registri_contabili.delete',   'section' => 'registri_contabili', 'label' => 'Elimina Registri Contabili'],
         ];
 
         foreach ($permissions as $permission) {
