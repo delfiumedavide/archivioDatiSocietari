@@ -8,6 +8,7 @@
 /storage/framework/sessions/*
 /storage/framework/views/*
 /storage/logs/*
+/storage/app/documents/*
 !/storage/framework/cache/.gitkeep
 !/storage/framework/sessions/.gitkeep
 !/storage/framework/views/.gitkeep

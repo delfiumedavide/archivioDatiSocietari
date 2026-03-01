@@ -10,7 +10,6 @@ services:
     restart: unless-stopped
     volumes:
       - .:/var/www/html
-      - documents_storage:/var/www/html/storage/app/documents
     depends_on:
       mysql:
         condition: service_healthy
@@ -87,8 +86,6 @@ volumes:
   mysql_data:
     driver: local
   redis_data:
-    driver: local
-  documents_storage:
     driver: local
 
 networks:
